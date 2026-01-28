@@ -33,7 +33,6 @@ export const getPermissions = (): string[] => {
     'savings': ['module', 'read', 'create', 'update', 'delete'],
     'deposits': ['module', 'read', 'create', 'update', 'delete'],
     'insurances': ['module', 'read', 'create', 'update', 'delete'],
-    'examples': ['module', 'read', 'create', 'update', 'delete'],
     'administrator': ['module'],
     'audit-logs': ['module', 'read'],
   };

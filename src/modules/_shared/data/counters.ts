@@ -12,6 +12,5 @@ export const getCounters = (): ICounter[] => {
     { name: 'deposits', template: 'DEPO/<seq>/<yyyy><mm>', seq: 0 },
     { name: 'bonds', template: 'BOND/<seq>/<yyyy><mm>', seq: 0 },
     { name: 'insurances', template: 'INS/<seq>/<yyyy><mm>', seq: 0 },
-    { name: 'examples', template: 'EXAMPLE/<seq>', seq: 0 },
   ];
 };
