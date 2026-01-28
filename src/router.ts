@@ -8,6 +8,7 @@ import auditLogRouter from './modules/audit-logs/router';
 import counterRouter from './modules/counters/router';
 import healthRouter from './modules/health/router';
 import masterBankRouter from './modules/master/banks/router';
+import masterBrokerRouter from './modules/master/brokers/router';
 import masterIssuerRouter from './modules/master/issuers/router';
 import masterOwnerRouter from './modules/master/owners/router';
 import masterPermissionRouter from './modules/master/permissions/router';
@@ -39,6 +40,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/master/roles', await masterRoleRouter(baseRouterInput));
   app.use('/v1/master/owners', await masterOwnerRouter(baseRouterInput));
   app.use('/v1/master/banks', await masterBankRouter(baseRouterInput));
+  app.use('/v1/master/brokers', await masterBrokerRouter(baseRouterInput));
   app.use('/v1/master/issuers', await masterIssuerRouter(baseRouterInput));
 
   /**

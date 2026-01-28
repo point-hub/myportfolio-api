@@ -26,6 +26,7 @@ export const getPermissions = (): string[] => {
     'roles': ['module', 'read', 'create', 'update', 'delete'],
     'owners': ['module', 'read', 'create', 'update', 'delete'],
     'banks': ['module', 'read', 'create', 'update', 'delete'],
+    'brokers': ['module', 'read', 'create', 'update', 'delete'],
     'issuers': ['module', 'read', 'create', 'update', 'delete'],
     'stocks': ['module', 'read', 'create', 'update', 'delete'],
     'bonds': ['module', 'read', 'create', 'update', 'delete'],
