@@ -1,0 +1,133 @@
+# Pointhub API Starter
+
+## Features
+- [Bun](https://bun.sh/) Javascript runtime 
+- [Express](https://expressjs.com) Node.js framework
+- [Cors](https://github.com/expressjs/cors) Cross-Origin Resource-Sharing enabled
+- [Helmet](https://github.com/helmetjs/helmet) Secure HTTP Headers
+- [Typescript](https://www.typescriptlang.org) for type checking
+- [Bun Test](https://bun.sh/guides/test) for unit testing
+- [Supertest](https://www.npmjs.com/package/supertest) for e2e testing
+- [ESLint](https://eslint.org) for code linting
+- [Husky](https://typicode.github.io/husky) for check your commit
+
+## Services
+- [MongoDB](https://www.mongodb.com/docs/drivers/node/current/) Database
+
+## Directory Structure
+
+```bash
+PAPI-STARTER
+├── node_modules
+├── src
+│   ├── assets
+│   ├── config
+│   ├── console
+│   ├── database
+│   ├── modules
+│   │   ├── master
+│   │   │   └── examples
+│   │   │       ├── controllers
+│   │   │       ├── repositories
+│   │   │       ├── rules
+│   │   │       ├── use-cases
+│   │   │       ├── entity.ts
+│   │   │       ├── factory.ts
+│   │   │       ├── interface.ts
+│   │   │       ├── router.ts
+│   │   │       └── schema.ts
+│   └── test
+│       ├── setup.ts
+│       └── utils.ts
+├── .env.example
+├── .env.test.example
+├── .cli.ts
+└── README.md
+```
+
+## Contribution Guide
+
+---
+
+### Database for development
+
+Since transactions are built on concepts of logical sessions they require mechanics which are only available in a replica set environment.
+
+Choose one of the options that you prefer
+
+- Install offline MongoDB database replica set using docker
+[Docker MongoDB RS](https://github.com/point-hub/docker-mongodb-rs)
+
+- Use online Database as a Service (DBaaS) [Atlas MongoDB](https://www.mongodb.com/atlas/database)
+
+### Installation
+
+We are using [Bun](https://dev.pointhub.net/guide/introduction/bun) as a drop-in replacement for Node.js
+
+### Install Bun
+
+Linux / MacOS
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+Windows
+```bash
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+### Install dependencies
+
+```bash
+cp .env.example .env
+cp .env.test.example .env.test
+bun install --frozen-lock
+bun run dev
+```
+
+### Setup Database
+
+#### Add Validation Schema
+
+```bash
+bun cli db:init
+```
+
+#### Seed Default Database
+
+```bash
+bun cli db:default
+```
+
+### Testing
+
+Testing all test case
+
+```bash
+bun test
+```
+
+Testing coverage
+
+```bash
+bun test:coverage
+```
+
+Testing report
+
+```bash
+bun test:report
+```
+
+Testing specific file or directory
+
+```bash
+# Test specific directory
+bun test src/modules/master/examples/controllers
+
+# Test specific file
+bun test src/modules/master/examples/controllers/create.spec
+
+# Test specific test case
+bun test src/modules/master/examples/controllers/create.spec -t "test case"
+```
