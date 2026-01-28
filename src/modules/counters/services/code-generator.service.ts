@@ -39,7 +39,8 @@ export class CodeGeneratorService implements ICodeGeneratorService {
     }
 
     if (data.template.includes('<mm>')) {
-      result = result.replaceAll('<mm>', (new Date(data.date).getMonth() + 1).toString());
+      const mm = String(new Date(data.date).getMonth() + 1).padStart(2, '0');
+      result = result.replaceAll('<mm>', mm);
     }
 
     return result;
