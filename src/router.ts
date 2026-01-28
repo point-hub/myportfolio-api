@@ -7,7 +7,9 @@ import ablyRouter from './modules/ably/router';
 import auditLogRouter from './modules/audit-logs/router';
 import counterRouter from './modules/counters/router';
 import healthRouter from './modules/health/router';
-import masterExampleRouter from './modules/master/examples/router';
+import masterBankRouter from './modules/master/banks/router';
+import masterIssuerRouter from './modules/master/issuers/router';
+import masterOwnerRouter from './modules/master/owners/router';
 import masterPermissionRouter from './modules/master/permissions/router';
 import masterRoleRouter from './modules/master/roles/router';
 import masterUserRouter from './modules/master/users/router';
@@ -35,7 +37,9 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/master/users', await masterUserRouter(baseRouterInput));
   app.use('/v1/master/permissions', await masterPermissionRouter(baseRouterInput));
   app.use('/v1/master/roles', await masterRoleRouter(baseRouterInput));
-  app.use('/v1/master/examples', await masterExampleRouter(baseRouterInput));
+  app.use('/v1/master/owners', await masterOwnerRouter(baseRouterInput));
+  app.use('/v1/master/banks', await masterBankRouter(baseRouterInput));
+  app.use('/v1/master/issuers', await masterIssuerRouter(baseRouterInput));
 
   /**
    * Rendered email templates
