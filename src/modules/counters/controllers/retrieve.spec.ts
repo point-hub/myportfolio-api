@@ -66,6 +66,6 @@ describe('retrieve an counter', async () => {
 
     // expect response json
     expect(response.body._id).toBeDefined();
-    expect(response.body.value).toStrictEqual(`INVOICE/0001/${new Date(date).getFullYear()}${(new Date(date).getMonth() + 1)}`);
+    expect(response.body.value).toStrictEqual(`INVOICE/0001/${new Date(date).getFullYear()}${(new Date(date).getMonth() + 1).toString().padStart(2, '0')}`);
   });
 });
