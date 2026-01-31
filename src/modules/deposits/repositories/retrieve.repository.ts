@@ -92,6 +92,8 @@ export class RetrieveRepository implements IRetrieveRepository {
     ));
     pipeline.push(...this.pipeJoinInterestScheduleBank());
     pipeline.push(...this.pipeJoinInterestScheduleCreatedBy());
+    pipeline.push(...this.pipeJoinCashbackScheduleBank());
+    pipeline.push(...this.pipeJoinCashbackScheduleCreatedBy());
     pipeline.push(...this.pipeProject());
 
     const response = await this.database.collection(collectionName).aggregate<IRetrieveOutput>(pipeline, {}, this.options);
@@ -452,7 +454,164 @@ export class RetrieveRepository implements IRetrieveRepository {
           },
         },
       },
-      // 3. Cleanup temporary users array
+      { $unset: '__users_temp' },
+    ];
+  }
+
+  private pipeJoinCashbackScheduleBank(): IPipeline[] {
+    return [
+      {
+        $lookup: {
+          from: 'banks',
+          localField: 'cashback_schedule.bank_id',
+          foreignField: '_id',
+          as: '__banks_temp',
+        },
+      },
+      {
+        $set: {
+          cashback_schedule: {
+            $map: {
+              input: { $ifNull: ['$cashback_schedule', []] },
+              as: 'item',
+              in: {
+                $mergeObjects: [
+                  '$$item',
+                  {
+                    bank: {
+                      $let: {
+                        vars: {
+                          bankMatched: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: '$__banks_temp',
+                                  as: 'b',
+                                  cond: { $eq: ['$$b._id', '$$item.bank_id'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                        in: {
+                          _id: '$$bankMatched._id',
+                          code: '$$bankMatched.code',
+                          name: '$$bankMatched.name',
+                          account: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: { $ifNull: ['$$bankMatched.accounts', []] },
+                                  as: 'acc',
+                                  cond: { $eq: ['$$acc.uuid', '$$item.bank_account_uuid'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                  {
+                    additional_bank: {
+                      $let: {
+                        vars: {
+                          matchedBank: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: { $ifNull: ['$__banks_temp', []] },
+                                  as: 'b',
+                                  cond: { $eq: ['$$b._id', '$$item.additional_bank_id'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                        in: {
+                          _id: '$$matchedBank._id',
+                          code: '$$matchedBank.code',
+                          name: '$$matchedBank.name',
+                          account: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: { $ifNull: ['$$matchedBank.accounts', []] },
+                                  as: 'acc',
+                                  cond: { $eq: ['$$acc.uuid', '$$item.additional_bank_account_uuid'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      { $unset: '__banks_temp' },
+    ];
+  }
+
+  private pipeJoinCashbackScheduleCreatedBy(): IPipeline[] {
+    return [
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'cashback_schedule.created_by_id',
+          foreignField: '_id',
+          as: '__users_temp',
+        },
+      },
+      {
+        $set: {
+          cashback_schedule: {
+            $map: {
+              input: { $ifNull: ['$cashback_schedule', []] },
+              as: 'item',
+              in: {
+                $mergeObjects: [
+                  '$$item',
+                  {
+                    created_by: {
+                      $let: {
+                        vars: {
+                          userMatched: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: '$__users_temp',
+                                  as: 'u',
+                                  cond: { $eq: ['$$u._id', '$$item.created_by_id'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                        in: {
+                          _id: '$$userMatched._id',
+                          name: '$$userMatched.name',
+                          username: '$$userMatched.username',
+                          email: '$$userMatched.email',
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
       { $unset: '__users_temp' },
     ];
   }

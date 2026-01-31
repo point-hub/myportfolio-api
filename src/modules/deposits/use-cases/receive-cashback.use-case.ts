@@ -6,6 +6,7 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import { roundNumber } from '@/utils/number';
 
 import type { IReceiveCashbackRepository } from '../repositories/receive-cashback.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
@@ -74,6 +75,10 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     }
 
     // Normalizes data (trim).
+    const remainingAmount = roundNumber((input.data?.amount ?? 0)
+      - (input.data?.received_amount ?? 0)
+      - (input.data?.received_additional_payment_amount ?? 0), 2);
+
     const data = {
       payment_date: input.data?.payment_date,
       amount: input.data?.amount,
@@ -85,7 +90,7 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       additional_bank_account_uuid: input.data?.additional_bank_account_uuid,
       received_additional_payment_date: input.data?.received_additional_payment_date,
       received_additional_payment_amount: input.data?.received_additional_payment_amount,
-      remaining_amount: input.data?.remaining_amount,
+      remaining_amount: remainingAmount,
       created_by_id: input.authUser._id,
     };
 
