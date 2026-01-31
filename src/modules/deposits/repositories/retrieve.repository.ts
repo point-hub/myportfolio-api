@@ -54,6 +54,12 @@ export interface IRetrieveOutput {
     rate?: number
     amount?: number
   }[]
+  withdrawal?: {
+    received_date?: string
+    received_amount?: number
+    remaining_amount?: number
+    bank?: IBank
+  }
   notes: string
   is_archived: boolean
   status: 'draft' | 'active' | 'completed'
@@ -633,6 +639,7 @@ export class RetrieveRepository implements IRetrieveRepository {
           cashback: 1,
           cashback_schedule: 1,
           notes: 1,
+          withdrawal: 1,
           is_archived: 1,
           status: 1,
           created_at: 1,

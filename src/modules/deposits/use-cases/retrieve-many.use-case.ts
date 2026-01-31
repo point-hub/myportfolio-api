@@ -67,6 +67,14 @@ export interface ISuccessData {
       rate?: number
       amount?: number
     }[]
+    withdrawal?: {
+      bank_id?: string
+      bank_account_uuid?: string
+      bank?: IBank
+      received_date?: string
+      received_amount?: number
+      remaining_amount?: number
+    }
     notes?: string
     is_archived?: boolean
     status?: 'draft' | 'active' | 'completed'
@@ -121,6 +129,7 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
           cashback: item.cashback,
           cashback_schedule: item.cashback_schedule,
           notes: item.notes,
+          withdrawal: item.withdrawal,
           is_archived: item.is_archived,
           status: item.status,
           created_at: item.created_at,

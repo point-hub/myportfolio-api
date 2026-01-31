@@ -31,7 +31,5 @@ export const updateRules = {
   'cashback_schedule.*.payment_date': ['required', 'string'],
   'cashback_schedule.*.rate': ['required', 'numeric'],
   'cashback_schedule.*.amount': ['required', 'numeric'],
-  'cashback.bank_id': ['required', 'string'],
-  'cashback.bank_account_uuid': ['required', 'string'],
   notes: ['string'],
 };
