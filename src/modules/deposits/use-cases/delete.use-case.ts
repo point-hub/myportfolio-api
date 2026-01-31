@@ -59,6 +59,24 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
+    const hasReceivedCashback = retrieveResponse.cashback_schedule?.some(
+      item => Number(item.received_amount) > 0,
+    );
+    if (hasReceivedCashback) {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in cashbacks' });
+    }
+
+    const hasReceivedInterests = retrieveResponse.interest_schedule?.some(
+      item => Number(item.received_amount) > 0,
+    );
+    if (hasReceivedInterests) {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in interests' });
+    }
+
+    if (retrieveResponse.status === 'completed') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already completed' });
+    }
+
     // Delete the data from the database.
     const response = await this.deps.deleteRepository.handle(input.filter._id);
 

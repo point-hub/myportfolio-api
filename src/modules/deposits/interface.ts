@@ -31,6 +31,8 @@ export interface IDeposit {
     term?: number
     payment_date?: string
     amount?: number
+    received_date?: string
+    received_amount?: number
   }[]
   cashback?: {
     bank_id?: string
@@ -40,6 +42,8 @@ export interface IDeposit {
     payment_date?: string
     rate?: number
     amount?: number
+    received_date?: string
+    received_amount?: number
   }[]
   notes?: string | null | undefined
   is_archived?: boolean | null
