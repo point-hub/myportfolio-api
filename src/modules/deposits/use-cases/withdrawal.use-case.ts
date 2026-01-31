@@ -69,7 +69,7 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    if (retrieveResponse.status === 'completed') {
+    if (retrieveResponse.status === 'completed' && !retrieveResponse.withdrawal?.received_date) {
       return this.fail({ code: 400, message: 'Cannot withdraw this form because already completed' });
     }
 
