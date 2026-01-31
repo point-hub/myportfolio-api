@@ -102,7 +102,6 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
-    console.log(input.filter._id);
     await this.deps.updateRepository.handle(input.filter._id, { status: 'completed' });
 
     // Normalizes data (trim).

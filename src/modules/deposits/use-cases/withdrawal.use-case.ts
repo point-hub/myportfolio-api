@@ -85,7 +85,6 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
       },
       status: 'completed',
     };
-    console.log(data);
 
     // Reject update when no fields have changed
     // const changes = this.deps.auditLogService.buildChanges(
