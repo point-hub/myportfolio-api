@@ -6,6 +6,7 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import { roundNumber } from '@/utils/number';
 
 import { collectionName, DepositEntity } from '../entity';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
@@ -122,13 +123,18 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       notes: input.data?.notes,
     });
 
+    // No interest schedule when is rollover
+    if (depositEntity.data.interest?.is_rollover) {
+      depositEntity.data.interest_schedule = [];
+    }
+
     // Check the insterest schedule amount should match with interest net amount.
     const totalInterestAmount = depositEntity.data.interest_schedule?.reduce(
       (sum, item) => sum + (item.amount || 0),
       0,
     );
-    if (!depositEntity.data.interest?.is_rollover && totalInterestAmount !== depositEntity.data.interest?.net_amount) {
-      return this.fail({ code: 400, message: `Total interest schedule amount (${totalInterestAmount}) does not match net amount (${depositEntity.data.interest?.net_amount}).` });
+    if (!depositEntity.data.interest?.is_rollover && roundNumber(totalInterestAmount ?? 0, 2) !== depositEntity.data.interest?.net_amount) {
+      return this.fail({ code: 400, message: `Total interest schedule amount (${roundNumber(totalInterestAmount ?? 0, 2)}) does not match net amount (${depositEntity.data.interest?.net_amount}).` });
     }
 
     // Reject update when no fields have changed

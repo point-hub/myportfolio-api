@@ -122,6 +122,11 @@ export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData>
       is_draft: true,
     });
 
+    // No interest schedule when is rollover
+    if (depositEntity.data.interest?.is_rollover) {
+      depositEntity.data.interest_schedule = [];
+    }
+
     // Reject update when no fields have changed
     const changes = this.deps.auditLogService.buildChanges(
       retrieveResponse,

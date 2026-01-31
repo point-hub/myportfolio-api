@@ -114,6 +114,11 @@ export class DraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       created_by_id: input.authUser._id,
     });
 
+    // No interest schedule when is rollover
+    if (depositEntity.data.interest?.is_rollover) {
+      depositEntity.data.interest_schedule = [];
+    }
+
     // Validate uniqueness: single unique code field.
     const uniqueFormNumberErrors = await this.deps.uniqueValidationService.validate(collectionName, { form_number: input.data.form_number });
     if (uniqueFormNumberErrors) {
