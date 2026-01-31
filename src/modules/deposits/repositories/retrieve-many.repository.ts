@@ -132,6 +132,13 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
 
     BaseMongoDBQueryFilters.addExactFilter(filters, 'status', query?.['search.status']);
 
+    // Custom
+    if (query?.['search.withdrawal.status'] === 'completed') {
+      filters.push({ 'withdrawal.remaining_amount': { $eq: 0 } });
+    } else if (query?.['search.withdrawal.status'] === 'outstanding') {
+      filters.push({ 'withdrawal.remaining_amount': { $gt: 0 } });
+    }
+
     return filters.length > 0 ? [{ $match: { $and: filters } }] : [];
   }
 
