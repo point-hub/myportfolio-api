@@ -175,6 +175,8 @@ export class RetrieveCashbacksRepository implements IRetrieveCashbacksRepository
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
 
+    BaseMongoDBQueryFilters.addExactFilter(filters, 'status', query?.['search.status']);
+
     // Custom
     if (query?.['search.cashback_schedule.status'] && query?.['search.cashback_schedule.status'] === 'true') {
       filters.push({ 'cashback_schedule.received_date': { $exists: true, $ne: '' } });

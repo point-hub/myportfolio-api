@@ -175,6 +175,8 @@ export class RetrieveInterestsRepository implements IRetrieveInterestsRepository
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
 
+    BaseMongoDBQueryFilters.addExactFilter(filters, 'status', query?.['search.status']);
+
     // Custom
     if (query?.['search.interest_schedule.status'] && query?.['search.interest_schedule.status'] === 'true') {
       filters.push({ 'interest_schedule.received_date': { $exists: true, $ne: '' } });
