@@ -6,7 +6,6 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
-import { roundNumber } from '@/utils/number';
 
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 import type { IUpdateRepository } from '../repositories/update.repository';
@@ -55,7 +54,7 @@ export interface ISuccessData {
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class DeleteWithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
     const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'deposits:update');
@@ -69,24 +68,9 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    if (retrieveResponse.status === 'completed') {
-      return this.fail({ code: 400, message: 'Cannot withdraw this form because already completed' });
-    }
-
-    // Normalizes data (trim).
-    const remainingAmount = roundNumber((input.data?.amount ?? 0) - (input.data?.received_amount ?? 0), 2);
     const data = {
-      withdrawal: {
-        amount: input.data?.amount,
-        bank_id: input.data?.bank_id,
-        bank_account_uuid: input.data?.bank_account_uuid,
-        received_date: input.data?.received_date,
-        received_amount: input.data?.received_amount,
-        remaining_amount: remainingAmount,
-        created_by_id: input.authUser._id,
-        created_at: new Date(),
-      },
-      status: 'completed',
+      withdrawal: null,
+      status: 'active',
     };
 
     // Reject update when no fields have changed

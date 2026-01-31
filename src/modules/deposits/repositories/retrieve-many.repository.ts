@@ -116,6 +116,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter date
     addDateRangeFilter(filters, 'placement.date', query?.['search.placement.date_from'], query?.['search.placement.date_to']);
     addDateRangeFilter(filters, 'placement.maturity_date', query?.['search.placement.maturity_date_from'], query?.['search.placement.maturity_date_to']);
+    addDateRangeFilter(filters, 'withdrawal.received_date', query?.['search.withdrawal.received_date_from'], query?.['search.withdrawal.received_date_to']);
 
     // Apply numeric filter using the helper function
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'placement.base_date', query?.['search.placement.base_date']);
@@ -126,6 +127,8 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'interest.tax_rate', query?.['search.interest.tax_rate']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'interest.tax_amount', query?.['search.interest.tax_amount']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'interest.net_amount', query?.['search.interest.net_amount']);
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'withdrawal.received_amount', query?.['search.withdrawal.received_amount']);
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'withdrawal.remaining_amount', query?.['search.withdrawal.remaining_amount']);
 
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
