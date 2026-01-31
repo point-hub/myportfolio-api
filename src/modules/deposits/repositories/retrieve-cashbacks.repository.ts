@@ -82,7 +82,7 @@ export class RetrieveCashbacksRepository implements IRetrieveCashbacksRepository
           cashback_schedule: item.cashback_schedule,
           notes: item.notes,
           is_archived: item.is_archived,
-          is_draft: item.is_draft,
+          status: item.status,
           created_at: item.created_at,
           created_by: item.created_by,
         };
@@ -174,7 +174,6 @@ export class RetrieveCashbacksRepository implements IRetrieveCashbacksRepository
 
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
-    BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_draft', query?.['search.is_draft']);
 
     // Custom
     if (query?.['search.cashback_schedule.status'] && query?.['search.cashback_schedule.status'] === 'true') {
@@ -402,7 +401,7 @@ export class RetrieveCashbacksRepository implements IRetrieveCashbacksRepository
           cashback_schedule: 1,
           notes: 1,
           is_archived: 1,
-          is_draft: 1,
+          status: 1,
           created_at: 1,
           created_by: 1,
         },

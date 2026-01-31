@@ -64,7 +64,6 @@ export interface IInput {
     notes?: string | null | undefined
     update_reason?: string
     is_archived?: boolean
-    is_draft?: boolean
   }
 }
 
@@ -121,6 +120,7 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       cashback: input.data?.cashback,
       cashback_schedule: input.data?.cashback_schedule,
       notes: input.data?.notes,
+      status: 'active',
     });
 
     // No interest schedule when is rollover

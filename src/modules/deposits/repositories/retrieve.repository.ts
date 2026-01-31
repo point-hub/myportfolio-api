@@ -56,7 +56,7 @@ export interface IRetrieveOutput {
   }[]
   notes: string
   is_archived: boolean
-  is_draft: boolean
+  status: 'draft' | 'active' | 'completed'
   created_at: Date
   created_by: IAuthUser
 }
@@ -116,7 +116,7 @@ export class RetrieveRepository implements IRetrieveRepository {
       cashback_schedule: response.data[0].cashback_schedule,
       notes: response.data[0].notes,
       is_archived: response.data[0].is_archived,
-      is_draft: response.data[0].is_draft,
+      status: response.data[0].status,
       created_at: response.data[0].created_at,
       created_by: response.data[0].created_by,
     };
@@ -634,7 +634,7 @@ export class RetrieveRepository implements IRetrieveRepository {
           cashback_schedule: 1,
           notes: 1,
           is_archived: 1,
-          is_draft: 1,
+          status: 1,
           created_at: 1,
           created_by: 1,
         },

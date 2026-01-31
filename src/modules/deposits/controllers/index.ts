@@ -11,3 +11,4 @@ export { retrieveInterestsController } from './retrieve-interests.controller';
 export { retrieveManyController } from './retrieve-many.controller';
 export { updateController } from './update.controller';
 export { updateDraftController } from './update-draft.controller';
+export { withdrawalController } from './withdrawal.controller';

@@ -43,7 +43,7 @@ export interface IDeposit {
   }[]
   notes?: string | null | undefined
   is_archived?: boolean | null
-  is_draft?: boolean | null
+  status?: 'draft' | 'active' | 'completed'
   created_at?: Date
   created_by_id?: string
 }

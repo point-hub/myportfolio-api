@@ -75,10 +75,10 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     }
 
     // Normalizes data (trim).
-    // Normalizes data (trim).
     const remainingAmount = roundNumber((input.data?.amount ?? 0)
       - (input.data?.received_amount ?? 0)
       - (input.data?.received_additional_payment_amount ?? 0), 2);
+
     const data = {
       payment_date: input.data?.payment_date,
       amount: input.data?.amount,
@@ -92,6 +92,7 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       received_additional_payment_amount: input.data?.received_additional_payment_amount,
       remaining_amount: remainingAmount,
       created_by_id: input.authUser._id,
+      created_at: new Date(),
     };
 
     // Reject update when no fields have changed

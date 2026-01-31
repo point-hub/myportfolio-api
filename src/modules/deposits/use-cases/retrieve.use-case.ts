@@ -70,7 +70,7 @@ export interface ISuccessData {
   }[]
   notes: string
   is_archived: boolean
-  is_draft: boolean
+  status?: 'draft' | 'active' | 'completed'
   created_at: Date
   created_by: IAuthUser
 }
@@ -116,7 +116,7 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       cashback_schedule: response.cashback_schedule,
       notes: response.notes,
       is_archived: response.is_archived,
-      is_draft: response.is_draft,
+      status: response.status,
       created_at: response.created_at,
       created_by: {
         _id: response.created_by?._id,

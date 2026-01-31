@@ -8,8 +8,8 @@ import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.s
 import type { IAuthUser } from '@/modules/master/users/interface';
 import { roundNumber } from '@/utils/number';
 
-import type { IReceiveCashbackRepository } from '../repositories/receive-cashback.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
+import type { IUpdateRepository } from '../repositories/update.repository';
 
 export interface IInput {
   ip: string
@@ -19,22 +19,17 @@ export interface IInput {
     _id: string
   }
   data?: {
-    payment_date?: string
     amount?: number
     bank_id?: string
     bank_account_uuid?: string
     received_date?: string
     received_amount?: number
-    additional_bank_id?: string
-    additional_bank_account_uuid?: string
-    received_additional_payment_date?: string
-    received_additional_payment_amount?: number
     remaining_amount?: number
   }
 }
 
 export interface IDeps {
-  receiveCashbackRepository: IReceiveCashbackRepository
+  updateRepository: IUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -60,7 +55,7 @@ export interface ISuccessData {
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
     const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'deposits:update');
@@ -75,25 +70,22 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     }
 
     // Normalizes data (trim).
-    const remainingAmount = roundNumber((input.data?.amount ?? 0)
-      - (input.data?.received_amount ?? 0)
-      - (input.data?.received_additional_payment_amount ?? 0), 2);
+    const remainingAmount = roundNumber((input.data?.amount ?? 0) - (input.data?.received_amount ?? 0), 2);
 
     const data = {
-      payment_date: input.data?.payment_date,
-      amount: input.data?.amount,
-      bank_id: input.data?.bank_id,
-      bank_account_uuid: input.data?.bank_account_uuid,
-      received_date: input.data?.received_date,
-      received_amount: input.data?.received_amount,
-      additional_bank_id: input.data?.additional_bank_id,
-      additional_bank_account_uuid: input.data?.additional_bank_account_uuid,
-      received_additional_payment_date: input.data?.received_additional_payment_date,
-      received_additional_payment_amount: input.data?.received_additional_payment_amount,
-      remaining_amount: remainingAmount,
-      created_by_id: input.authUser._id,
-      created_at: new Date(),
+      withdrawal: {
+        amount: input.data?.amount,
+        bank_id: input.data?.bank_id,
+        bank_account_uuid: input.data?.bank_account_uuid,
+        received_date: input.data?.received_date,
+        received_amount: input.data?.received_amount,
+        remaining_amount: remainingAmount,
+        created_by_id: input.authUser._id,
+        created_at: new Date(),
+      },
+      status: 'completed',
     };
+    console.log(data);
 
     // Reject update when no fields have changed
     // const changes = this.deps.auditLogService.buildChanges(
@@ -105,7 +97,7 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     // }
 
     // Save the data to the database.
-    const response = await this.deps.receiveCashbackRepository.handle(input.filter._id, data);
+    const response = await this.deps.updateRepository.handle(input.filter._id, data);
 
     // Create an audit log entry for this operation.
     // const dataLog = {

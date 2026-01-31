@@ -110,9 +110,9 @@ export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       cashback_schedule: input.data.cashback_schedule,
       notes: input.data.notes,
       is_archived: false,
-      is_draft: false,
       created_at: new Date(),
       created_by_id: input.authUser._id,
+      status: 'active',
     });
 
     // No interest schedule when is rollover
