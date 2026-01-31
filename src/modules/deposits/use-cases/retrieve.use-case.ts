@@ -70,7 +70,7 @@ export interface ISuccessData {
   }[]
   notes: string
   is_archived: boolean
-  status?: 'draft' | 'active' | 'completed'
+  status?: 'draft' | 'active' | 'withdrawn' | 'renewed'
   created_at: Date
   created_by: IAuthUser
 }

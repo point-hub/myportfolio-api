@@ -69,8 +69,8 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    if (retrieveResponse.status === 'completed' && !retrieveResponse.withdrawal?.received_date) {
-      return this.fail({ code: 400, message: 'Cannot withdraw this form because already completed' });
+    if (retrieveResponse.status === 'renewed') {
+      return this.fail({ code: 400, message: 'Cannot withdraw this form because already renewed' });
     }
 
     // Normalizes data (trim).
@@ -86,7 +86,7 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
         created_by_id: input.authUser._id,
         created_at: new Date(),
       },
-      status: 'completed',
+      status: 'withdrawn',
     };
 
     // Reject update when no fields have changed

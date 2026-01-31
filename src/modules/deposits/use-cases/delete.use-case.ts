@@ -73,8 +73,12 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in interests' });
     }
 
-    if (retrieveResponse.status === 'completed') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already completed' });
+    if (retrieveResponse.status === 'renewed') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already renewed' });
+    }
+
+    if (retrieveResponse.status === 'withdrawn') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
     }
 
     // Delete the data from the database.
