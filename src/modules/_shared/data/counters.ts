@@ -6,7 +6,6 @@ export const getCounters = (): ICounter[] => {
     { name: 'owners', template: 'OWNER/<seq>', seq: 0 },
     { name: 'banks', template: 'BANK/<seq>', seq: 0 },
     { name: 'brokers', template: 'BROKER/<seq>', seq: 0 },
-    { name: 'issuers', template: 'ISS/<seq>', seq: 0 },
     { name: 'stocks', template: 'STOCK/<seq>/<yyyy><mm>', seq: 0 },
     { name: 'savings', template: 'SAV/<seq>/<yyyy><mm>', seq: 0 },
     { name: 'deposits', template: 'DEPO/<seq>/<yyyy><mm>', seq: 0 },

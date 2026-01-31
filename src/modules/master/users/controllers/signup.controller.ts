@@ -1,7 +1,7 @@
 import type { IController, IControllerInput } from '@point-hub/papi';
 
 import { EmailService } from '@/modules/_shared/services/email.service';
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { UniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import { RetrieveManyRepository as RoleRetrieveManyRepository } from '@/modules/master/roles/repositories/retrieve-many.repository';
@@ -21,7 +21,17 @@ export const signupController: IController = async (controllerInput: IController
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], signupRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], signupRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const signupRepository = new SignupRepository(controllerInput.dbConnection, { session });

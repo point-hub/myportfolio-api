@@ -6,6 +6,7 @@ import { EmailService } from './modules/_shared/services/email.service';
 import ablyRouter from './modules/ably/router';
 import auditLogRouter from './modules/audit-logs/router';
 import counterRouter from './modules/counters/router';
+import depositRouter from './modules/deposits/router';
 import healthRouter from './modules/health/router';
 import masterBankRouter from './modules/master/banks/router';
 import masterBrokerRouter from './modules/master/brokers/router';
@@ -42,6 +43,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/master/banks', await masterBankRouter(baseRouterInput));
   app.use('/v1/master/brokers', await masterBrokerRouter(baseRouterInput));
   app.use('/v1/master/issuers', await masterIssuerRouter(baseRouterInput));
+  app.use('/v1/deposits', await depositRouter(baseRouterInput));
 
   /**
    * Rendered email templates

@@ -1,6 +1,6 @@
 import { type IController, type IControllerInput } from '@point-hub/papi';
 
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 
 import { RetrieveRepository } from '../repositories/retrieve.repository';
 import { verifyTokenRules } from '../rules/verify-token.rules';
@@ -15,7 +15,17 @@ export const verifyTokenController: IController = async (controllerInput: IContr
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], verifyTokenRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], verifyTokenRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });

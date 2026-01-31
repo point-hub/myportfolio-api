@@ -1,10 +1,14 @@
 import { type IDocument } from '@point-hub/papi';
 import Validatorjs from 'validatorjs';
 
-import { throwApiError } from '../utils/throw-api-error';
+export interface IErrors {
+  code: number
+  message: string
+  errors: { [key: string]: string[] }
+}
 
-export interface ISchemaUniqueValidationService {
-  validate(document: IDocument, schema: IDocument): void;
+export interface ISchemaValidationService {
+  validate(document: IDocument, schema: IDocument): undefined | IErrors;
 }
 
 
@@ -61,14 +65,20 @@ export const validate = (document: IDocument, schema: IDocument) => {
   registerUsernameFormatRules();
 
   if (validation.fails()) {
-    throwApiError(422, { message: 'Validation failed, Please check the highlighted fields.', errors: validation.errors.errors });
+    return {
+      code: 422,
+      message: 'Validation failed, Please check the highlighted fields.',
+      errors: validation.errors.errors,
+    };
   }
+
+  return undefined;
 };
 
 /**
  * Static schema validation service (singleton)
  */
-export const SchemaUniqueValidationService: ISchemaUniqueValidationService = {
+export const SchemaValidationService: ISchemaValidationService = {
   validate,
 };
 

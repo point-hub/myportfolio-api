@@ -5,7 +5,6 @@ import type { IUniqueValidationService } from '@/modules/_shared/services/unique
 import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
-import type { ICodeGeneratorService } from '@/modules/counters/services/code-generator.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
 
 import { collectionName, IssuerEntity } from '../entity';
@@ -27,7 +26,6 @@ export interface IDeps {
   ablyService: IAblyService
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
-  codeGeneratorService: ICodeGeneratorService
   uniqueValidationService: IUniqueValidationService
 }
 
@@ -44,7 +42,6 @@ export interface ISuccessData {
  * - Validate uniqueness: single unique code field.
  * - Validate uniqueness: single unique name field.
  * - Save the data to the database.
- * - Increment the code counter.
  * - Create an audit log entry for this operation.
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
@@ -81,9 +78,6 @@ export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Save the data to the database.
     const createResponse = await this.deps.createRepository.handle(issuerEntity.data);
-
-    // Increment the code counter.
-    await this.deps.codeGeneratorService.increment(collectionName);
 
     // Create an audit log entry for this operation.
     const changes = this.deps.auditLogService.buildChanges({}, issuerEntity.data);

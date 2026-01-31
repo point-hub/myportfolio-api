@@ -1,7 +1,7 @@
 import type { IController, IControllerInput } from '@point-hub/papi';
 
 import { EmailService } from '@/modules/_shared/services/email.service';
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 
 import { IdentityMatcherRepository } from '../repositories/identity-matcher.repository';
@@ -19,7 +19,17 @@ export const requestPasswordController: IController = async (controllerInput: IC
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], requestPasswordRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], requestPasswordRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const identityMatcherRepository = new IdentityMatcherRepository(controllerInput.dbConnection, { session });

@@ -5,8 +5,11 @@ export interface IBroker {
   branch?: string
   address?: string
   phone?: string
-  account_number?: string
-  account_name?: string
+  accounts?: {
+    uuid?: string
+    account_number?: string
+    account_name?: string
+  }[]
   notes?: string
   is_archived?: boolean | null | undefined
   created_at?: Date

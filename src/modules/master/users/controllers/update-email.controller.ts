@@ -1,7 +1,7 @@
 import type { IController, IControllerInput } from '@point-hub/papi';
 
 import { EmailService } from '@/modules/_shared/services/email.service';
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { UniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
@@ -20,7 +20,17 @@ export const updateEmailController: IController = async (controllerInput: IContr
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], updateEmailRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], updateEmailRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });

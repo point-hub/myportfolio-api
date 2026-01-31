@@ -13,12 +13,12 @@ import { collectionName } from './entity';
 export const schema: ISchema[] = [
   {
     collection: collectionName,
-    unique: [['code'], ['name'], ['account_number'], ['account_name']],
+    unique: [['code'], ['name']],
     uniqueIfExists: [[]],
     indexes: [],
     schema: {
       bsonType: 'object',
-      required: ['code', 'name', 'account_number', 'account_name'],
+      required: ['code', 'name'],
       // additionalProperties: false,
       properties: {
         _id: {
@@ -45,13 +45,28 @@ export const schema: ISchema[] = [
           bsonType: 'string',
           description: 'The phone of the bank entity.',
         },
-        account_number: {
-          bsonType: 'string',
-          description: 'The account_number of the bank entity.',
-        },
-        account_name: {
-          bsonType: 'string',
-          description: 'The account_name of the bank entity.',
+        accounts: {
+          bsonType: 'array',
+          description: 'List of bank accounts',
+          items: {
+            bsonType: 'object',
+            required: ['account_number', 'account_name'],
+            properties: {
+              uuid: {
+                bsonType: 'string',
+                description: 'The uuid of the bank account entity.',
+              },
+              account_number: {
+                bsonType: 'string',
+                description: 'The account_number of the bank account entity.',
+              },
+              account_name: {
+                bsonType: 'string',
+                description: 'The account_name of the bank account entity.',
+              },
+            },
+            additionalProperties: false,
+          },
         },
         notes: {
           bsonType: 'string',

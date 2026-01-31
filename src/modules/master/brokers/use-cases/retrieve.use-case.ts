@@ -24,8 +24,10 @@ export interface ISuccessData {
   branch?: string
   address?: string
   phone?: string
-  account_number?: string
-  account_name?: string
+  accounts?: {
+    account_number?: string
+    account_name?: string
+  }[]
   notes?: string
   is_archived: boolean
   created_at: Date
@@ -65,8 +67,7 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       branch: response.branch,
       address: response.address,
       phone: response.phone,
-      account_number: response.account_number,
-      account_name: response.account_name,
+      accounts: response.accounts,
       notes: response.notes,
       is_archived: response.is_archived,
       created_at: response.created_at,

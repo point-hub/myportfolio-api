@@ -63,7 +63,7 @@ export class RestoreUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Normalizes data (trim).
     const roleEntity = new RoleEntity({
-      is_archived: null,
+      is_archived: false,
     });
 
     // Save the data to the database.

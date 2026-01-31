@@ -1,11 +1,10 @@
 import type { IController, IControllerInput } from '@point-hub/papi';
 
 import { AuthorizationService } from '@/modules/_shared/services/authorization.service';
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { UniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
-import { CodeGeneratorService } from '@/modules/counters/services/code-generator.service';
 
 import { CreateRepository } from '../repositories/create.repository';
 import { createRules } from '../rules/create.rules';
@@ -19,12 +18,21 @@ export const createController: IController = async (controllerInput: IController
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], createRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], createRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const createRepository = new CreateRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
-    const codeGeneratorService = new CodeGeneratorService(controllerInput.dbConnection, { session });
     const uniqueValidationService = new UniqueValidationService(controllerInput.dbConnection, { session });
 
     // Initialize use case with dependencies
@@ -33,7 +41,6 @@ export const createController: IController = async (controllerInput: IController
       ablyService: AblyService,
       auditLogService,
       authorizationService: AuthorizationService,
-      codeGeneratorService,
       uniqueValidationService,
     });
 

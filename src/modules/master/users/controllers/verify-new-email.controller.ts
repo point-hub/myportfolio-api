@@ -1,6 +1,6 @@
 import { type IController, type IControllerInput } from '@point-hub/papi';
 
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 
 import { RetrieveRepository } from '../repositories/retrieve.repository';
@@ -17,7 +17,17 @@ export const verifyNewEmailController: IController = async (controllerInput: ICo
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], verifyNewEmailRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], verifyNewEmailRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const verifyEmailRepository = new UserVerifyEmailRepository(controllerInput.dbConnection, { session });

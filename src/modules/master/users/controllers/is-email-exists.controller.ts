@@ -1,6 +1,6 @@
 import { type IController, type IControllerInput } from '@point-hub/papi';
 
-import { SchemaUniqueValidationService } from '@/modules/_shared/services/schema-validation.service';
+import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 
 import { IsEmailExistsRepository } from '../repositories/is-email-exists.repository';
 import { isEmailExistsRules } from '../rules/is-email-exists.rules';
@@ -14,7 +14,17 @@ export const isEmailExistsController: IController = async (controllerInput: ICon
     session.startTransaction();
 
     // Validate request body against schema
-    SchemaUniqueValidationService.validate(controllerInput.req['body'], isEmailExistsRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], isEmailExistsRules);
+    if (schemaValidationResponse) {
+      controllerInput.res.status(schemaValidationResponse.code);
+      controllerInput.res.statusMessage = schemaValidationResponse.message;
+      controllerInput.res.json({
+        code: 422,
+        message: schemaValidationResponse.message,
+        errors: schemaValidationResponse.errors,
+      });
+      return;
+    }
 
     // Initialize repositories and utilities
     const isEmailExistsRepository = new IsEmailExistsRepository(controllerInput.dbConnection, {

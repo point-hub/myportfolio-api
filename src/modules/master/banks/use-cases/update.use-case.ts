@@ -2,6 +2,7 @@ import { BaseUseCase, type IUseCaseOutputFailed, type IUseCaseOutputSuccess } fr
 
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
 import type { IUniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
+import type { IUuidService } from '@/modules/_shared/services/uuid.service';
 import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
@@ -24,8 +25,11 @@ export interface IInput {
     branch?: string
     address?: string
     phone?: string
-    account_number?: string
-    account_name?: string
+    accounts?: {
+      uuid?: string
+      account_number?: string
+      account_name?: string
+    }[]
     notes?: string
     update_reason?: string
     is_archived?: boolean
@@ -39,6 +43,7 @@ export interface IDeps {
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
   uniqueValidationService: IUniqueValidationService
+  uuidService: IUuidService
 }
 
 export interface ISuccessData {
@@ -82,8 +87,11 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       branch: input.data?.branch,
       address: input.data?.address,
       phone: input.data?.phone,
-      account_number: input.data?.account_number,
-      account_name: input.data?.account_name,
+      accounts: input.data?.accounts?.map(account => ({
+        uuid: account.uuid ?? this.deps.uuidService.v7(),
+        account_name: account.account_name?.trim(),
+        account_number: account.account_number?.trim(),
+      })),
       notes: input.data?.notes,
       is_archived: input.data?.is_archived,
     });

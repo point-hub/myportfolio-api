@@ -17,8 +17,10 @@ export interface IRetrieveOutput {
   branch: string
   address: string
   phone: string
-  account_number: string
-  account_name: string
+  accounts: {
+    account_number: string
+    account_name: string
+  }[]
   notes: string
   is_archived: boolean
   created_at: Date
@@ -50,8 +52,7 @@ export class RetrieveRepository implements IRetrieveRepository {
       branch: response.data[0].branch,
       address: response.data[0].address,
       phone: response.data[0].phone,
-      account_number: response.data[0].account_number,
-      account_name: response.data[0].account_name,
+      accounts: response.data[0].accounts,
       notes: response.data[0].notes,
       is_archived: response.data[0].is_archived,
       created_at: response.data[0].created_at,
@@ -111,8 +112,7 @@ export class RetrieveRepository implements IRetrieveRepository {
           branch: 1,
           address: 1,
           phone: 1,
-          account_number: 1,
-          account_name: 1,
+          accounts: 1,
           notes: 1,
           is_archived: 1,
           created_at: 1,

@@ -9,7 +9,7 @@ export const createRules = {
   branch: ['string'],
   address: ['string'],
   phone: ['string'],
-  account_number: ['required', 'string'],
-  account_name: ['required', 'string'],
+  'accounts.*.account_number': ['required', 'string'],
+  'accounts.*.account_name': ['required', 'string'],
   notes: ['string'],
 };
