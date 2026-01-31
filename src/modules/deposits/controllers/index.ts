@@ -2,6 +2,7 @@ export { archiveController } from './archive.controller';
 export { createController } from './create.controller';
 export { deleteController } from './delete.controller';
 export { draftController } from './draft.controller';
+export { extendController } from './extend.controller';
 export { receiveCashbackController } from './receive-cashback.controller';
 export { receiveInterestController } from './receive-interest.controller';
 export { restoreController } from './restore.controller';

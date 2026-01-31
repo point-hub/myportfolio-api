@@ -19,6 +19,7 @@ const makeRouter = async ({ dbConnection }: IBaseAppInput) => {
     { method: 'get', path: '/:id', middlewares: [authMiddleware], controller: controller.retrieveController },
     { method: 'patch', path: '/:id', middlewares: [authMiddleware], controller: controller.updateController },
     { method: 'patch', path: '/:id/draft', middlewares: [authMiddleware], controller: controller.updateDraftController },
+    { method: 'post', path: '/:id/extend', middlewares: [authMiddleware], controller: controller.extendController },
     { method: 'post', path: '/:id/receive-interest', middlewares: [authMiddleware], controller: controller.receiveInterestController },
     { method: 'post', path: '/:id/receive-cashback', middlewares: [authMiddleware], controller: controller.receiveCashbackController },
     { method: 'post', path: '/:id/archive', middlewares: [authMiddleware], controller: controller.archiveController },
