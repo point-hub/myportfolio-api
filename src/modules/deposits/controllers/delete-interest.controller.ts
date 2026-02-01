@@ -1,45 +1,30 @@
 import type { IController, IControllerInput } from '@point-hub/papi';
 
 import { AuthorizationService } from '@/modules/_shared/services/authorization.service';
-import { SchemaValidationService } from '@/modules/_shared/services/schema-validation.service';
 import { UniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 
-import { ReceiveCashbackRepository } from '../repositories/receive-cashback.repository';
+import { DeleteInterestRepository } from '../repositories/delete-interest.repository';
 import { RetrieveRepository } from '../repositories/retrieve.repository';
-import { receiveCashbackRules } from '../rules/receive-cashback.rules';
-import { ReceiveCashbackUseCase } from '../use-cases/receive-cashback.use-case';
+import { DeleteInterestUseCase } from '../use-cases/delete-interest.use-case';
 
-export const receiveCashbackController: IController = async (controllerInput: IControllerInput) => {
+export const deleteInterestController: IController = async (controllerInput: IControllerInput) => {
   let session;
   try {
     // Start database session for transaction
     session = controllerInput.dbConnection.startSession();
     session.startTransaction();
 
-    // Validate request body against schema
-    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], receiveCashbackRules);
-    if (schemaValidationResponse) {
-      controllerInput.res.status(schemaValidationResponse.code);
-      controllerInput.res.statusMessage = schemaValidationResponse.message;
-      controllerInput.res.json({
-        code: 422,
-        message: schemaValidationResponse.message,
-        errors: schemaValidationResponse.errors,
-      });
-      return;
-    }
-
     // Initialize repositories and utilities
-    const receiveCashbackRepository = new ReceiveCashbackRepository(controllerInput.dbConnection, { session });
+    const deleteInterestRepository = new DeleteInterestRepository(controllerInput.dbConnection, { session });
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
     const uniqueValidationService = new UniqueValidationService(controllerInput.dbConnection, { session });
 
     // Initialize use case with dependencies
-    const receiveCashbackUseCase = new ReceiveCashbackUseCase({
-      receiveCashbackRepository,
+    const deleteInterestUseCase = new DeleteInterestUseCase({
+      deleteInterestRepository,
       retrieveRepository,
       ablyService: AblyService,
       auditLogService,
@@ -48,7 +33,7 @@ export const receiveCashbackController: IController = async (controllerInput: IC
     });
 
     // Execute business logic
-    const response = await receiveCashbackUseCase.handle({
+    const response = await deleteInterestUseCase.handle({
       authUser: controllerInput.req['authUser'],
       userAgent: JSON.parse(
         Array.isArray(controllerInput.req.headers['client-user-agent'])
@@ -60,7 +45,6 @@ export const receiveCashbackController: IController = async (controllerInput: IC
         _id: controllerInput.req['params']['id'],
         uuid: controllerInput.req['body']['uuid'],
       },
-      data: controllerInput.req['body'],
     });
 
     // Handle failed response

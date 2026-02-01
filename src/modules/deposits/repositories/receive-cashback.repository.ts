@@ -2,8 +2,13 @@ import type { IDatabase, IDocument } from '@point-hub/papi';
 
 import { collectionName } from '../entity';
 
+interface IFilter {
+  _id: string
+  uuid: string
+}
+
 export interface IReceiveCashbackRepository {
-  handle(_id: string, document: IDocument): Promise<IReceiveCashbackOutput>
+  handle(filter: IFilter, document: IDocument): Promise<IReceiveCashbackOutput>
 }
 
 export interface IReceiveCashbackOutput {
@@ -17,8 +22,8 @@ export class ReceiveCashbackRepository implements IReceiveCashbackRepository {
     public options?: Record<string, unknown>,
   ) { }
 
-  async handle(_id: string, document: IDocument): Promise<IReceiveCashbackOutput> {
-    return await this.database.collection(collectionName).updateOne({ _id }, [
+  async handle(filter: IFilter, document: IDocument): Promise<IReceiveCashbackOutput> {
+    return await this.database.collection(collectionName).updateOne({ _id: filter._id }, [
       {
         $set: {
           cashback_schedule: {
@@ -27,7 +32,7 @@ export class ReceiveCashbackRepository implements IReceiveCashbackRepository {
               as: 'item',
               in: {
                 $cond: [
-                  { $eq: ['$$item.payment_date', document['payment_date']] },
+                  { $eq: ['$$item.uuid', filter['uuid']] },
                   {
                     $mergeObjects: [
                       '$$item',

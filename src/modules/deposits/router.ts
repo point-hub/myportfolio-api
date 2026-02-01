@@ -26,6 +26,8 @@ const makeRouter = async ({ dbConnection }: IBaseAppInput) => {
     { method: 'post', path: '/:id/restore', middlewares: [authMiddleware], controller: controller.restoreController },
     { method: 'post', path: '/:id/withdrawal', middlewares: [authMiddleware], controller: controller.withdrawalController },
     { method: 'post', path: '/:id/delete-withdrawal', middlewares: [authMiddleware], controller: controller.deleteWithdrawalController },
+    { method: 'post', path: '/:id/delete-interest', middlewares: [authMiddleware], controller: controller.deleteInterestController },
+    { method: 'post', path: '/:id/delete-cashback', middlewares: [authMiddleware], controller: controller.deleteCashbackController },
     { method: 'delete', path: '/:id', middlewares: [authMiddleware], controller: controller.deleteController },
   ];
 

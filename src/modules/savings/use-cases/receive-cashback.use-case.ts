@@ -18,10 +18,10 @@ export interface IInput {
   userAgent: IUserAgent
   filter: {
     _id: string
+    uuid: string
   }
   data?: {
-    payment_date?: string
-    amount?: number
+    uuid?: string
     bank_id?: string
     bank_account_uuid?: string
     received_date?: string
@@ -75,14 +75,16 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
+    const cashback = retrieveExistingResponse.cashback_schedule?.find(
+      item => item.uuid === input.data?.uuid,
+    );
+
     // Normalizes data (trim).
-    const remainingAmount = roundNumber((input.data?.amount ?? 0)
+    const remainingAmount = roundNumber((cashback?.amount ?? 0)
       - (input.data?.received_amount ?? 0)
       - (input.data?.received_additional_payment_amount ?? 0), 2);
 
     const data = {
-      payment_date: input.data?.payment_date,
-      amount: input.data?.amount,
       bank_id: input.data?.bank_id,
       bank_account_uuid: input.data?.bank_account_uuid,
       received_date: input.data?.received_date,
@@ -97,7 +99,7 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     };
 
     // Save the data to the database.
-    const response = await this.deps.receiveCashbackRepository.handle(input.filter._id, data);
+    const response = await this.deps.receiveCashbackRepository.handle(input.filter, data);
 
     // Check updated response.
     const retrieveUpdatedResponse = await this.deps.retrieveRepository.raw(input.filter._id);

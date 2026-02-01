@@ -58,6 +58,7 @@ export const receiveInterestController: IController = async (controllerInput: IC
       ip: controllerInput.req.ip ?? '',
       filter: {
         _id: controllerInput.req['params']['id'],
+        uuid: controllerInput.req['body']['uuid'],
       },
       data: controllerInput.req['body'],
     });

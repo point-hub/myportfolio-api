@@ -9,5 +9,7 @@ export class SavingEntity extends BaseEntity<ISaving> {
     super();
 
     this.data = this.normalize(this.data);
+    this.data.interest_schedule = this.ensureUUID(this.data.interest_schedule);
+    this.data.cashback_schedule = this.ensureUUID(this.data.cashback_schedule);
   }
 }

@@ -110,17 +110,33 @@ export class AuditLogService implements IAuditLogService {
   }
 
   private flattenObject(
-    obj: Record<string, unknown>,
+    obj: unknown,
     prefix = '',
     result: Record<string, unknown> = {},
   ): Record<string, unknown> {
-    for (const [key, value] of Object.entries(obj)) {
-      const path = prefix ? `${prefix}.${key}` : key;
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        const path = prefix ? `${prefix}.${index}` : String(index);
 
-      if (this.isPlainObject(value)) {
-        this.flattenObject(value, path, result);
-      } else {
-        result[path] = value;
+        if (this.isPlainObject(item) || Array.isArray(item)) {
+          this.flattenObject(item, path, result);
+        } else {
+          result[path] = item;
+        }
+      });
+
+      return result;
+    }
+
+    if (this.isPlainObject(obj)) {
+      for (const [key, value] of Object.entries(obj)) {
+        const path = prefix ? `${prefix}.${key}` : key;
+
+        if (this.isPlainObject(value) || Array.isArray(value)) {
+          this.flattenObject(value, path, result);
+        } else {
+          result[path] = value;
+        }
       }
     }
 
@@ -225,12 +241,8 @@ export class AuditLogService implements IAuditLogService {
     const redactValue = options?.redactValue ?? '[REDACTED]';
 
     // Flatten objects for easy comparison
-    const flatBefore = this.isPlainObject(before)
-      ? this.flattenObject(before as Record<string, unknown>)
-      : {};
-    const flatAfter = this.isPlainObject(after)
-      ? this.flattenObject(after as Record<string, unknown>)
-      : {};
+    const flatBefore = this.flattenObject(before);
+    const flatAfter = this.flattenObject(after);
 
     // Collect all keys from both objects
     const allKeys = new Set([

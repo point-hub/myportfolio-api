@@ -2,8 +2,13 @@ import type { IDatabase, IDocument } from '@point-hub/papi';
 
 import { collectionName } from '../entity';
 
+interface IFilter {
+  _id: string
+  uuid: string
+}
+
 export interface IReceiveInterestRepository {
-  handle(_id: string, document: IDocument): Promise<IReceiveInterestOutput>
+  handle(filter: IFilter, document: IDocument): Promise<IReceiveInterestOutput>
 }
 
 export interface IReceiveInterestOutput {
@@ -17,8 +22,8 @@ export class ReceiveInterestRepository implements IReceiveInterestRepository {
     public options?: Record<string, unknown>,
   ) { }
 
-  async handle(_id: string, document: IDocument): Promise<IReceiveInterestOutput> {
-    return await this.database.collection(collectionName).updateOne({ _id }, [
+  async handle(filter: IFilter, document: IDocument): Promise<IReceiveInterestOutput> {
+    return await this.database.collection(collectionName).updateOne({ _id: filter._id }, [
       {
         $set: {
           interest_schedule: {
@@ -27,7 +32,7 @@ export class ReceiveInterestRepository implements IReceiveInterestRepository {
               as: 'item',
               in: {
                 $cond: [
-                  { $eq: ['$$item.payment_date', document['payment_date']] },
+                  { $eq: ['$$item.uuid', filter['uuid']] },
                   {
                     $mergeObjects: [
                       '$$item',

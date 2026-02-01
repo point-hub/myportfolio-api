@@ -6,10 +6,9 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
-import { roundNumber } from '@/utils/number';
 
 import { collectionName } from '../entity';
-import type { IReceiveInterestRepository } from '../repositories/receive-interest.repository';
+import type { IDeleteCashbackRepository } from '../repositories/delete-cashback.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 
 export interface IInput {
@@ -20,22 +19,10 @@ export interface IInput {
     _id: string
     uuid: string
   }
-  data?: {
-    uuid?: string
-    bank_id?: string
-    bank_account_uuid?: string
-    received_date?: string
-    received_amount?: number
-    additional_bank_id?: string
-    additional_bank_account_uuid?: string
-    received_additional_payment_date?: string
-    received_additional_payment_amount?: number
-    remaining_amount?: number
-  }
 }
 
 export interface IDeps {
-  receiveInterestRepository: IReceiveInterestRepository
+  deleteCashbackRepository: IDeleteCashbackRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -49,7 +36,7 @@ export interface ISuccessData {
 }
 
 /**
- * Use case: Update Saving.
+ * Use case: Update Deposit.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action
@@ -61,10 +48,10 @@ export interface ISuccessData {
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class DeleteCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'savings:receive-interest');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'deposits:receive-cashback');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
@@ -75,32 +62,21 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    const interest = retrieveExistingResponse.interest_schedule?.find(
-      item => item.uuid === input.data?.uuid,
-    );
-
-    // Normalizes data (trim).
-    const remainingAmount = roundNumber((interest?.amount ?? 0)
-      - (input.data?.received_amount ?? 0)
-      - (input.data?.received_additional_payment_amount ?? 0), 2);
-
-    const data = {
-      bank_id: input.data?.bank_id,
-      bank_account_uuid: input.data?.bank_account_uuid,
-      received_date: input.data?.received_date,
-      received_amount: input.data?.received_amount,
-      additional_bank_id: input.data?.additional_bank_id,
-      additional_bank_account_uuid: input.data?.additional_bank_account_uuid,
-      received_additional_payment_date: input.data?.received_additional_payment_date,
-      received_additional_payment_amount: input.data?.received_additional_payment_amount,
-      remaining_amount: remainingAmount,
-      created_by_id: input.authUser._id,
-      created_at: new Date(),
-    };
-
     // Save the data to the database.
-    const response = await this.deps.receiveInterestRepository.handle(input.filter, data);
-
+    const response = await this.deps.deleteCashbackRepository.handle(input.filter._id, {
+      'cashback_schedule.$[item].bank_id': null,
+      'cashback_schedule.$[item].bank_account_uuid': null,
+      'cashback_schedule.$[item].received_date': null,
+      'cashback_schedule.$[item].received_amount': null,
+      'cashback_schedule.$[item].additional_bank_id': null,
+      'cashback_schedule.$[item].additional_bank_account_uuid': null,
+      'cashback_schedule.$[item].received_additional_payment_date': null,
+      'cashback_schedule.$[item].received_additional_payment_amount': null,
+      'cashback_schedule.$[item].remaining_amount': null,
+      'cashback_schedule.$[item].created_by_id': null,
+      'cashback_schedule.$[item].created_at': null,
+    }, [{ 'item.uuid': input.filter.uuid }],
+    );
     // Check updated response.
     const retrieveUpdatedResponse = await this.deps.retrieveRepository.raw(input.filter._id);
     if (!retrieveUpdatedResponse) {
@@ -112,6 +88,8 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       retrieveExistingResponse,
       retrieveUpdatedResponse,
     );
+
+    // console.log(JSON.stringify(changes));
     if (changes.summary.fields?.length === 0) {
       return this.fail({ code: 400, message: 'No changes detected. Please modify at least one field before saving.' });
     }
@@ -125,8 +103,8 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'receive-interest',
-      module: 'savings',
+      action: 'delete-cashback',
+      module: 'deposits',
       system_reason: 'update data',
       changes: changes,
       metadata: {
@@ -141,13 +119,13 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
 
     // Publish realtime notification event to the recipient’s channel.
     this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
-      type: 'savings',
+      type: 'deposits',
       actor_id: input.authUser._id,
       recipient_id: input.authUser._id,
       is_read: false,
       created_at: new Date(),
       entities: {
-        savings: input.filter._id,
+        deposits: input.filter._id,
       },
       data: dataLog,
     });

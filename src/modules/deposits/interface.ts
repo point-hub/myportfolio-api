@@ -30,6 +30,7 @@ export interface IDeposit {
     is_rollover?: boolean
   }
   interest_schedule?: {
+    uuid?: string
     term?: number
     payment_date?: string
     amount?: number
@@ -41,6 +42,7 @@ export interface IDeposit {
     bank_account_uuid?: string
   }
   cashback_schedule?: {
+    uuid?: string
     payment_date?: string
     rate?: number
     amount?: number

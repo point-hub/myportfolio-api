@@ -44,6 +44,10 @@ export default class DbSeedCommand extends BaseConsoleCommand {
     await this.resetCollection('roles', options);
     await this.resetCollection('users', options);
     await this.resetCollection('deposits', options);
+    await this.resetCollection('savings', options);
+    await this.resetCollection('insurances', options);
+    await this.resetCollection('bonds', options);
+    await this.resetCollection('deposits', options);
   }
 
   private async resetCollection(name: string, options: Record<string, unknown>) {

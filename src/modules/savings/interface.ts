@@ -31,6 +31,7 @@ export interface ISaving {
     is_rollover?: boolean
   }
   interest_schedule?: {
+    uuid?: string
     term?: number
     payment_date?: string
     amount?: number
@@ -42,6 +43,7 @@ export interface ISaving {
     bank_account_uuid?: string
   }
   cashback_schedule?: {
+    uuid?: string
     payment_date?: string
     rate?: number
     amount?: number

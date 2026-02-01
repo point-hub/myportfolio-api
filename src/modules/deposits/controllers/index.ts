@@ -1,6 +1,8 @@
 export { archiveController } from './archive.controller';
 export { createController } from './create.controller';
 export { deleteController } from './delete.controller';
+export { deleteCashbackController } from './delete-cashback.controller';
+export { deleteInterestController } from './delete-interest.controller';
 export { deleteWithdrawalController } from './delete-withdrawal.controller';
 export { draftController } from './draft.controller';
 export { extendController } from './extend.controller';
