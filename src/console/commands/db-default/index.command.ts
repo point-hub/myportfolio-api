@@ -21,10 +21,12 @@ export default class DbSeedCommand extends BaseConsoleCommand {
       await this.dbConnection.open();
       session = this.dbConnection.startSession();
       session.startTransaction();
-      // Reset database
-      await this.reset({ session });
-      // Seed required default data
-      await this.seeds('default', { session });
+      if (mongoDBConfig.name.includes('_dev_db')) {
+        // Reset database
+        await this.reset({ session });
+        // Seed required default data
+        await this.seeds('default', { session });
+      }
       await session?.commitTransaction();
     } catch (error) {
       console.error(error);
@@ -41,7 +43,7 @@ export default class DbSeedCommand extends BaseConsoleCommand {
     await this.resetCollection('permissions', options);
     await this.resetCollection('roles', options);
     await this.resetCollection('users', options);
-    await this.resetCollection('examples', options);
+    await this.resetCollection('deposits', options);
   }
 
   private async resetCollection(name: string, options: Record<string, unknown>) {

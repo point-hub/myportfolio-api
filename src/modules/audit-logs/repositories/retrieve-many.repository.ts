@@ -23,8 +23,10 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     const pipeline: IPipeline[] = [];
 
     pipeline.push(...this.pipeQueryFilter(query));
-    pipeline.push(...this.pipeGroupByOperationID());
     pipeline.push(...this.pipeProject());
+    if (query?.['search.group_by_operation_id']) {
+      pipeline.push(...this.pipeGroupByOperationID());
+    }
 
     const response = await this.database.collection(collectionName).aggregate<IRetrieveOutput>(pipeline, query, this.options);
 

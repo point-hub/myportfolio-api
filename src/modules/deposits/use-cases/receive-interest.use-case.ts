@@ -8,6 +8,7 @@ import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.s
 import type { IAuthUser } from '@/modules/master/users/interface';
 import { roundNumber } from '@/utils/number';
 
+import { collectionName } from '../entity';
 import type { IReceiveInterestRepository } from '../repositories/receive-interest.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 
@@ -69,8 +70,8 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     }
 
     // Check if the record exists.
-    const retrieveResponse = await this.deps.retrieveRepository.raw(input.filter._id);
-    if (!retrieveResponse) {
+    const retrieveExistingResponse = await this.deps.retrieveRepository.raw(input.filter._id);
+    if (!retrieveExistingResponse) {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
@@ -95,53 +96,59 @@ export class ReceiveInterestUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       created_at: new Date(),
     };
 
-    // Reject update when no fields have changed
-    // const changes = this.deps.auditLogService.buildChanges(
-    //   retrieveResponse,
-    //   this.deps.auditLogService.mergeDefined(retrieveResponse, data),
-    // );
-    // if (changes.summary.fields?.length === 0) {
-    //   return this.fail({ code: 400, message: 'No changes detected. Please modify at least one field before saving.' });
-    // }
-
     // Save the data to the database.
     const response = await this.deps.receiveInterestRepository.handle(input.filter._id, data);
 
+    // Check updated response.
+    const retrieveUpdatedResponse = await this.deps.retrieveRepository.raw(input.filter._id);
+    if (!retrieveUpdatedResponse) {
+      return this.fail({ code: 404, message: 'Resource not found' });
+    }
+
+    // Reject update when no fields have changed
+    const changes = this.deps.auditLogService.buildChanges(
+      retrieveExistingResponse,
+      retrieveUpdatedResponse,
+    );
+    if (changes.summary.fields?.length === 0) {
+      return this.fail({ code: 400, message: 'No changes detected. Please modify at least one field before saving.' });
+    }
+
     // Create an audit log entry for this operation.
-    // const dataLog = {
-    //   operation_id: this.deps.auditLogService.generateOperationId(),
-    //   entity_type: collectionName,
-    //   entity_id: input.filter._id,
-    //   entity_ref: retrieveResponse.form_number!,
-    //   actor_type: 'user',
-    //   actor_id: input.authUser._id,
-    //   actor_name: input.authUser.username,
-    //   action: 'receive-interest',
-    //   module: 'deposits',
-    //   system_reason: 'update data',
-    //   changes: changes,
-    //   metadata: {
-    //     ip: input.ip,
-    //     device: input.userAgent.device,
-    //     browser: input.userAgent.browser,
-    //     os: input.userAgent.os,
-    //   },
-    //   created_at: new Date(),
-    // };
-    // await this.deps.auditLogService.log(dataLog);
+    const dataLog = {
+      operation_id: this.deps.auditLogService.generateOperationId(),
+      entity_type: collectionName,
+      entity_id: input.filter._id,
+      entity_ref: retrieveExistingResponse.form_number!,
+      actor_type: 'user',
+      actor_id: input.authUser._id,
+      actor_name: input.authUser.username,
+      action: 'receive-interest',
+      module: 'deposits',
+      system_reason: 'update data',
+      changes: changes,
+      metadata: {
+        ip: input.ip,
+        device: input.userAgent.device,
+        browser: input.userAgent.browser,
+        os: input.userAgent.os,
+      },
+      created_at: new Date(),
+    };
+    await this.deps.auditLogService.log(dataLog);
 
     // Publish realtime notification event to the recipient’s channel.
-    // this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
-    //   type: 'deposits',
-    //   actor_id: input.authUser._id,
-    //   recipient_id: input.authUser._id,
-    //   is_read: false,
-    //   created_at: new Date(),
-    //   entities: {
-    //     deposits: input.filter._id,
-    //   },
-    //   data: dataLog,
-    // });
+    this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
+      type: 'deposits',
+      actor_id: input.authUser._id,
+      recipient_id: input.authUser._id,
+      is_read: false,
+      created_at: new Date(),
+      entities: {
+        deposits: input.filter._id,
+      },
+      data: dataLog,
+    });
 
     // Return a success response.
     return this.success({

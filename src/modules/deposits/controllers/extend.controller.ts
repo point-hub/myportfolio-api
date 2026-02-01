@@ -8,6 +8,7 @@ import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service
 import { CodeGeneratorService } from '@/modules/counters/services/code-generator.service';
 
 import { CreateRepository } from '../repositories/create.repository';
+import { RetrieveRepository } from '../repositories/retrieve.repository';
 import { UpdateRepository } from '../repositories/update.repository';
 import { createRules } from '../rules/create.rules';
 import { ExtendUseCase } from '../use-cases/extend.use-case';
@@ -35,6 +36,7 @@ export const extendController: IController = async (controllerInput: IController
     // Initialize repositories and utilities
     const createRepository = new CreateRepository(controllerInput.dbConnection, { session });
     const updateRepository = new UpdateRepository(controllerInput.dbConnection, { session });
+    const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
     const codeGeneratorService = new CodeGeneratorService(controllerInput.dbConnection, { session });
     const uniqueValidationService = new UniqueValidationService(controllerInput.dbConnection, { session });
@@ -43,6 +45,7 @@ export const extendController: IController = async (controllerInput: IController
     const extendUseCase = new ExtendUseCase({
       createRepository,
       updateRepository,
+      retrieveRepository,
       ablyService: AblyService,
       auditLogService,
       authorizationService: AuthorizationService,

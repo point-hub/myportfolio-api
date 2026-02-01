@@ -127,6 +127,38 @@ export class AuditLogService implements IAuditLogService {
     return result;
   }
 
+  private isSameValue = (a: unknown, b: unknown) => {
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() === b.getTime();
+    }
+
+    // Array (structural)
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return this.stableStringify(a) === this.stableStringify(b);
+    }
+
+    return a === b;
+  };
+
+  private stableStringify = (value: unknown): string => {
+    return JSON.stringify(value, (_key, val) => {
+      if (val instanceof Date) {
+        return val.toISOString();
+      }
+
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        return Object.keys(val)
+          .sort()
+          .reduce<Record<string, unknown>>((acc, k) => {
+            acc[k] = (val as Record<string, unknown>)[k];
+            return acc;
+          }, {});
+      }
+
+      return val;
+    });
+  };
+
   async log(data: IData): Promise<ICreateResponse> {
     const response = await this.database.collection('audit_logs').create({
       operation_id: data.operation_id,
@@ -215,7 +247,7 @@ export class AuditLogService implements IAuditLogService {
       const beforeValue = flatBefore[key];
       const afterValue = flatAfter[key];
 
-      if (beforeValue !== afterValue) {
+      if (!this.isSameValue(beforeValue, afterValue)) {
         changedFields.push(key);
       }
     }

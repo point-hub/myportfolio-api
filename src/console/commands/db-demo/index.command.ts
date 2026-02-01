@@ -21,8 +21,10 @@ export default class DbSeedCommand extends BaseConsoleCommand {
       await this.dbConnection.open();
       session = this.dbConnection.startSession();
       session.startTransaction();
-      // See demo example from /modules/_shared/seeds directory
-      await this.seeds('demo', { session });
+      if (mongoDBConfig.name.includes('_dev_db')) {
+        // See demo example from /modules/_shared/seeds directory
+        await this.seeds('demo', { session });
+      }
       await session?.commitTransaction();
     } catch (error) {
       console.error(error);

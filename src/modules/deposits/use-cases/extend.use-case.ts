@@ -11,6 +11,7 @@ import { roundNumber } from '@/utils/number';
 
 import { collectionName, DepositEntity } from '../entity';
 import type { ICreateRepository } from '../repositories/create.repository';
+import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 import type { IUpdateRepository } from '../repositories/update.repository';
 
 export interface IInput {
@@ -69,6 +70,7 @@ export interface IInput {
 export interface IDeps {
   createRepository: ICreateRepository
   updateRepository: IUpdateRepository
+  retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
@@ -102,7 +104,19 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
+    // Check if the record exists.
+    const retrieveExistingResponse = await this.deps.retrieveRepository.raw(input.filter._id);
+    if (!retrieveExistingResponse) {
+      return this.fail({ code: 404, message: 'Resource not found' });
+    }
+
     await this.deps.updateRepository.handle(input.filter._id, { status: 'renewed' });
+
+    // Check updated response.
+    const retrieveUpdatedResponse = await this.deps.retrieveRepository.raw(input.filter._id);
+    if (!retrieveUpdatedResponse) {
+      return this.fail({ code: 404, message: 'Resource not found' });
+    }
 
     // Normalizes data (trim).
     const depositEntity = new DepositEntity({
@@ -151,15 +165,16 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Create an audit log entry for this operation.
     const changes = this.deps.auditLogService.buildChanges({}, depositEntity.data);
+    const operationId = this.deps.auditLogService.generateOperationId();
     const dataLog = {
-      operation_id: this.deps.auditLogService.generateOperationId(),
+      operation_id: operationId,
       entity_type: collectionName,
       entity_id: createResponse.inserted_id,
       entity_ref: `${input.data.form_number}`,
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'create',
+      action: 'extend',
       module: 'deposits',
       system_reason: 'insert data',
       changes: changes,
@@ -185,6 +200,30 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       },
       data: dataLog,
     });
+
+    // Create an audit log entry for this operation.
+    const oldFormChanges = this.deps.auditLogService.buildChanges(retrieveExistingResponse, retrieveUpdatedResponse);
+    const oldFormDataLog = {
+      operation_id: operationId,
+      entity_type: collectionName,
+      entity_id: `${retrieveExistingResponse._id}`,
+      entity_ref: `${retrieveExistingResponse.form_number}`,
+      actor_type: 'user',
+      actor_id: input.authUser._id,
+      actor_name: input.authUser.username,
+      action: 'extend',
+      module: 'deposits',
+      system_reason: 'updating old form status',
+      changes: oldFormChanges,
+      metadata: {
+        ip: input.ip,
+        device: input.userAgent.device,
+        browser: input.userAgent.browser,
+        os: input.userAgent.os,
+      },
+      created_at: new Date(),
+    };
+    await this.deps.auditLogService.log(oldFormDataLog);
 
     // Return a success response.
     return this.success({

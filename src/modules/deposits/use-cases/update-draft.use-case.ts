@@ -147,7 +147,7 @@ export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData>
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'update',
+      action: 'update-draft',
       module: 'deposits',
       system_reason: 'update data',
       user_reason: input.data?.update_reason,
