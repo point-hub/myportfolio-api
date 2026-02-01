@@ -108,6 +108,14 @@ export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData>
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
+    if (retrieveResponse.status === 'renewed') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already renewed' });
+    }
+
+    if (retrieveResponse.status === 'withdrawn') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
+    }
+
     // Normalizes data (trim).
     const savingEntity = new SavingEntity({
       owner_id: input.data?.owner_id,

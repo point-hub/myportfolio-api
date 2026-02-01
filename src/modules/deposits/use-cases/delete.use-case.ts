@@ -61,6 +61,14 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
+    if (retrieveResponse.status === 'renewed') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already renewed' });
+    }
+
+    if (retrieveResponse.status === 'withdrawn') {
+      return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
+    }
+
     const hasReceivedCashback = retrieveResponse.cashback_schedule?.some(
       item => Number(item.received_amount) > 0,
     );
@@ -73,14 +81,6 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
     );
     if (hasReceivedInterests) {
       return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in interests' });
-    }
-
-    if (retrieveResponse.status === 'renewed') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already renewed' });
-    }
-
-    if (retrieveResponse.status === 'withdrawn') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
     }
 
     if (retrieveResponse.renewed_id) {
