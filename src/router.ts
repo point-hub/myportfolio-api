@@ -8,6 +8,7 @@ import auditLogRouter from './modules/audit-logs/router';
 import counterRouter from './modules/counters/router';
 import depositRouter from './modules/deposits/router';
 import healthRouter from './modules/health/router';
+// import insuranceRouter from './modules/insurances/router';
 import masterBankRouter from './modules/master/banks/router';
 import masterBrokerRouter from './modules/master/brokers/router';
 import masterIssuerRouter from './modules/master/issuers/router';
@@ -16,6 +17,7 @@ import masterPermissionRouter from './modules/master/permissions/router';
 import masterRoleRouter from './modules/master/roles/router';
 import masterUserRouter from './modules/master/users/router';
 import authRouter from './modules/master/users/router-auth';
+import savingRouter from './modules/savings/router';
 
 export interface IRoute {
   method: 'get' | 'post' | 'patch' | 'put' | 'delete'
@@ -44,6 +46,8 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/master/brokers', await masterBrokerRouter(baseRouterInput));
   app.use('/v1/master/issuers', await masterIssuerRouter(baseRouterInput));
   app.use('/v1/deposits', await depositRouter(baseRouterInput));
+  // app.use('/v1/insurances', await insuranceRouter(baseRouterInput));
+  app.use('/v1/savings', await savingRouter(baseRouterInput));
 
   /**
    * Rendered email templates
