@@ -142,6 +142,35 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
       filters.push({ 'withdrawal.remaining_amount': { $gt: 0 } });
     }
 
+    if (query?.['search.due_choosen'] && query?.['search.due_within'] && !isNaN(query?.['search.due_within'])) {
+      const dueChosen = query['search.due_choosen'];
+      const dueWithinDays = Number(query['search.due_within']);
+
+      const today = new Date();
+
+      if (dueChosen === 'due') {
+        const dueDateLimit = new Date();
+        dueDateLimit.setDate(today.getDate() + dueWithinDays);
+
+        filters.push({
+          'placement.maturity_date': {
+            $gte: today.toISOString().substring(0, 10),
+            $lte: dueDateLimit.toISOString().substring(0, 10),
+          },
+        });
+      } else if (dueChosen === 'overdue') {
+        const overdueLimit = new Date();
+        overdueLimit.setDate(today.getDate() - dueWithinDays);
+
+        filters.push({
+          'placement.maturity_date': {
+            $gte: overdueLimit.toISOString().substring(0, 10),
+            $lt: today.toISOString().substring(0, 10),
+          },
+        });
+      }
+    }
+
     return filters.length > 0 ? [{ $match: { $and: filters } }] : [];
   }
 
