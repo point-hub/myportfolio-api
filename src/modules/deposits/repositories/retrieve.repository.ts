@@ -96,6 +96,11 @@ export class RetrieveRepository implements IRetrieveRepository {
       'interest.bank_account_uuid',
       'interest.bank',
     ));
+    pipeline.push(...this.pipeJoinBankAccount(
+      'withdrawal.bank_id',
+      'withdrawal.bank_account_uuid',
+      'withdrawal.bank',
+    ));
     pipeline.push(...this.pipeJoinInterestScheduleBank());
     pipeline.push(...this.pipeJoinInterestScheduleCreatedBy());
     pipeline.push(...this.pipeJoinCashbackScheduleBank());
@@ -121,6 +126,7 @@ export class RetrieveRepository implements IRetrieveRepository {
       cashback: response.data[0].cashback,
       cashback_schedule: response.data[0].cashback_schedule,
       notes: response.data[0].notes,
+      withdrawal: response.data[0].withdrawal,
       is_archived: response.data[0].is_archived,
       status: response.data[0].status,
       created_at: response.data[0].created_at,

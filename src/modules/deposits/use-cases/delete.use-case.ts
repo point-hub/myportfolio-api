@@ -9,6 +9,7 @@ import type { IAuthUser } from '@/modules/master/users/interface';
 import { collectionName } from '../entity';
 import type { IDeleteRepository } from '../repositories/delete.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
+import type { IUpdateRepository } from '../repositories/update.repository';
 
 export interface IInput {
   ip: string
@@ -24,6 +25,7 @@ export interface IInput {
 
 export interface IDeps {
   deleteRepository: IDeleteRepository
+  updateRepository: IUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -79,6 +81,10 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     if (retrieveResponse.status === 'withdrawn') {
       return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
+    }
+
+    if (retrieveResponse.renewed_id) {
+      await this.deps.updateRepository.handle(retrieveResponse.renewed_id, { status: 'active' });
     }
 
     // Delete the data from the database.

@@ -119,6 +119,7 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       is_archived: false,
       created_at: new Date(),
       created_by_id: input.authUser._id,
+      renewed_id: input.filter._id,
       status: 'active',
     });
 

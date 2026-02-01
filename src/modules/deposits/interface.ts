@@ -56,6 +56,7 @@ export interface IDeposit {
   notes?: string | null | undefined
   is_archived?: boolean | null
   status?: 'draft' | 'active' | 'withdrawn' | 'renewed'
+  renewed_id?: string
   created_at?: Date
   created_by_id?: string
 }

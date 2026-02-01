@@ -57,6 +57,12 @@ export interface ISuccessData {
     term?: number
     payment_date?: string
     amount?: number
+    received_date?: string
+    received_amount?: number
+    remaining_amount?: number
+    bank_id?: string
+    bank_account_uuid?: string
+    bank?: IBank
   }[]
   cashback?: {
     bank_id?: string
@@ -67,7 +73,21 @@ export interface ISuccessData {
     payment_date?: string
     rate?: number
     amount?: number
+    received_date?: string
+    received_amount?: number
+    remaining_amount?: number
+    bank_id?: string
+    bank_account_uuid?: string
+    bank?: IBank
   }[]
+  withdrawal?: {
+    received_date?: string
+    received_amount?: number
+    remaining_amount?: number
+    bank_id?: string
+    bank_account_uuid?: string
+    bank?: IBank
+  }
   notes: string
   is_archived: boolean
   status?: 'draft' | 'active' | 'withdrawn' | 'renewed'
@@ -114,6 +134,7 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       interest_schedule: response.interest_schedule,
       cashback: response.cashback,
       cashback_schedule: response.cashback_schedule,
+      withdrawal: response.withdrawal,
       notes: response.notes,
       is_archived: response.is_archived,
       status: response.status,

@@ -6,6 +6,7 @@ import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service
 
 import { DeleteRepository } from '../repositories/delete.repository';
 import { RetrieveRepository } from '../repositories/retrieve.repository';
+import { UpdateRepository } from '../repositories/update.repository';
 import { DeleteUseCase } from '../use-cases/delete.use-case';
 
 export const deleteController: IController = async (controllerInput: IControllerInput) => {
@@ -17,12 +18,14 @@ export const deleteController: IController = async (controllerInput: IController
 
     // Initialize repositories and utilities
     const deleteRepository = new DeleteRepository(controllerInput.dbConnection, { session });
+    const updateRepository = new UpdateRepository(controllerInput.dbConnection, { session });
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
 
     // Initialize use case with dependencies
     const deleteUseCase = new DeleteUseCase({
       deleteRepository,
+      updateRepository,
       retrieveRepository,
       ablyService: AblyService,
       auditLogService,
