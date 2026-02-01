@@ -64,6 +64,9 @@ export class RestoreUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
     // Normalizes data (trim).
     const ownerEntity = new OwnerEntity({
       is_archived: false,
+      archived_at: null,
+      archived_by_id: null,
+
     });
 
     // Save the data to the database.

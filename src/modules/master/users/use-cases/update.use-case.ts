@@ -64,6 +64,8 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       name: input.data.name,
       notes: input.data.notes,
       role_id: input.data.role_id,
+      updated_at: new Date(),
+      updated_by_id: input.authUser._id,
     });
 
     if (userEntity.data.username) {

@@ -64,6 +64,8 @@ export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
     // Normalizes data (trim).
     const ownerEntity = new OwnerEntity({
       is_archived: true,
+      archived_at: new Date,
+      archived_by_id: input.authUser._id,
     });
 
     // Save the data to the database.

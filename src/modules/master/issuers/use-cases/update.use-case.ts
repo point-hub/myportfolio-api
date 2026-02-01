@@ -23,7 +23,6 @@ export interface IInput {
     name?: string
     notes?: string
     update_reason?: string
-    is_archived?: boolean
   }
 }
 
@@ -75,7 +74,8 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       code: input.data?.code,
       name: input.data?.name,
       notes: input.data?.notes,
-      is_archived: input.data?.is_archived,
+      updated_at: new Date(),
+      updated_by_id: input.authUser._id,
     });
 
     // Validate uniqueness: single unique code field.

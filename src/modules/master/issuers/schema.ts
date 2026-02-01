@@ -41,13 +41,29 @@ export const schema: ISchema[] = [
           bsonType: 'bool',
           description: 'Indicates whether the record is archived.',
         },
-        created_at: {
-          bsonType: 'date',
-          description: 'Timestamp indicating when this record was created.',
-        },
         created_by_id: {
           bsonType: 'objectId',
           description: 'The ID of the user who created this record.',
+        },
+        created_at: {
+          bsonType: 'date',
+          description: 'Timestamp indicating when created this record.',
+        },
+        updated_by_id: {
+          bsonType: 'objectId',
+          description: 'The ID of the user who updated this record.',
+        },
+        updated_at: {
+          bsonType: 'date',
+          description: 'Timestamp indicating when updated this record.',
+        },
+        archived_by_id: {
+          bsonType: 'objectId',
+          description: 'The ID of the user who archived this record.',
+        },
+        archived_at: {
+          bsonType: 'date',
+          description: 'Timestamp indicating when archived this record.',
         },
       },
     },
