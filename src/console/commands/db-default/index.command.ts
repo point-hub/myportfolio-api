@@ -43,6 +43,10 @@ export default class DbSeedCommand extends BaseConsoleCommand {
     await this.resetCollection('permissions', options);
     await this.resetCollection('roles', options);
     await this.resetCollection('users', options);
+    await this.resetCollection('owners', options);
+    await this.resetCollection('banks', options);
+    await this.resetCollection('brokers', options);
+    await this.resetCollection('issuers', options);
     await this.resetCollection('deposits', options);
     await this.resetCollection('savings', options);
     await this.resetCollection('insurances', options);

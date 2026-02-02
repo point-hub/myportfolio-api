@@ -17,6 +17,7 @@ import masterPermissionRouter from './modules/master/permissions/router';
 import masterRoleRouter from './modules/master/roles/router';
 import masterUserRouter from './modules/master/users/router';
 import authRouter from './modules/master/users/router-auth';
+import paymentStockRouter from './modules/payment-stocks/router';
 import savingRouter from './modules/savings/router';
 import stockRouter from './modules/stocks/router';
 
@@ -50,6 +51,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/insurances', await insuranceRouter(baseRouterInput));
   app.use('/v1/savings', await savingRouter(baseRouterInput));
   app.use('/v1/stocks', await stockRouter(baseRouterInput));
+  app.use('/v1/payment-stocks', await paymentStockRouter(baseRouterInput));
 
   /**
    * Rendered email templates
