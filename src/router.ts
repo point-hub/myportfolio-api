@@ -18,6 +18,7 @@ import masterRoleRouter from './modules/master/roles/router';
 import masterUserRouter from './modules/master/users/router';
 import authRouter from './modules/master/users/router-auth';
 import savingRouter from './modules/savings/router';
+import stockRouter from './modules/stocks/router';
 
 export interface IRoute {
   method: 'get' | 'post' | 'patch' | 'put' | 'delete'
@@ -48,6 +49,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/deposits', await depositRouter(baseRouterInput));
   app.use('/v1/insurances', await insuranceRouter(baseRouterInput));
   app.use('/v1/savings', await savingRouter(baseRouterInput));
+  app.use('/v1/stocks', await stockRouter(baseRouterInput));
 
   /**
    * Rendered email templates
