@@ -5,6 +5,7 @@ import { SchemaValidationService } from '@/modules/_shared/services/schema-valid
 import { UniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
+import { UpdateRepository as StockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { RetrieveRepository } from '../repositories/retrieve.repository';
 import { UpdateRepository } from '../repositories/update.repository';
@@ -33,6 +34,7 @@ export const updateController: IController = async (controllerInput: IController
 
     // Initialize repositories and utilities
     const updateRepository = new UpdateRepository(controllerInput.dbConnection, { session });
+    const stockUpdateRepository = new StockUpdateRepository(controllerInput.dbConnection, { session });
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
     const uniqueValidationService = new UniqueValidationService(controllerInput.dbConnection, { session });
@@ -40,6 +42,7 @@ export const updateController: IController = async (controllerInput: IController
     // Initialize use case with dependencies
     const updateUseCase = new UpdateUseCase({
       updateRepository,
+      stockUpdateRepository,
       retrieveRepository,
       ablyService: AblyService,
       auditLogService,

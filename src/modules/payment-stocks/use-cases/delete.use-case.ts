@@ -5,6 +5,7 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { collectionName } from '../entity';
 import type { IDeleteRepository } from '../repositories/delete.repository';
@@ -26,6 +27,7 @@ export interface IInput {
 export interface IDeps {
   deleteRepository: IDeleteRepository
   updateRepository: IUpdateRepository
+  stockUpdateRepository: IStockUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -63,6 +65,10 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Delete the data from the database.
     const response = await this.deps.deleteRepository.handle(input.filter._id);
+
+    retrieveResponse.transactions?.forEach(async (element) => {
+      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'active' });
+    });
 
     // Create an audit log entry for this operation.
     const changes = this.deps.auditLogService.buildChanges(retrieveResponse, {});

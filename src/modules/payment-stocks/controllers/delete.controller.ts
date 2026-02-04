@@ -3,6 +3,7 @@ import type { IController, IControllerInput } from '@point-hub/papi';
 import { AuthorizationService } from '@/modules/_shared/services/authorization.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
+import { UpdateRepository as StockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { DeleteRepository } from '../repositories/delete.repository';
 import { RetrieveRepository } from '../repositories/retrieve.repository';
@@ -19,6 +20,7 @@ export const deleteController: IController = async (controllerInput: IController
     // Initialize repositories and utilities
     const deleteRepository = new DeleteRepository(controllerInput.dbConnection, { session });
     const updateRepository = new UpdateRepository(controllerInput.dbConnection, { session });
+    const stockUpdateRepository = new StockUpdateRepository(controllerInput.dbConnection, { session });
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
 
@@ -26,6 +28,7 @@ export const deleteController: IController = async (controllerInput: IController
     const deleteUseCase = new DeleteUseCase({
       deleteRepository,
       updateRepository,
+      stockUpdateRepository,
       retrieveRepository,
       ablyService: AblyService,
       auditLogService,

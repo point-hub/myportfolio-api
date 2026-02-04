@@ -3,6 +3,7 @@ import type { IController, IControllerInput } from '@point-hub/papi';
 import { AuthorizationService } from '@/modules/_shared/services/authorization.service';
 import { AblyService } from '@/modules/ably/services/ably.service';
 import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service';
+import { UpdateRepository as StockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { RetrieveRepository } from '../repositories/retrieve.repository';
 import { UpdateRepository } from '../repositories/update.repository';
@@ -17,12 +18,14 @@ export const archiveController: IController = async (controllerInput: IControlle
 
     // Initialize repositories and utilities
     const updateRepository = new UpdateRepository(controllerInput.dbConnection, { session });
+    const stockUpdateRepository = new StockUpdateRepository(controllerInput.dbConnection, { session });
     const retrieveRepository = new RetrieveRepository(controllerInput.dbConnection, { session });
     const auditLogService = new AuditLogService(controllerInput.dbConnection, { session });
 
     // Initialize use case with dependencies
     const updateUseCase = new ArchiveUseCase({
       updateRepository,
+      stockUpdateRepository,
       retrieveRepository,
       ablyService: AblyService,
       auditLogService,

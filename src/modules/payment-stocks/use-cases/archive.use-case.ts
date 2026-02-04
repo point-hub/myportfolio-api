@@ -5,6 +5,7 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { collectionName, PaymentStockEntity } from '../entity';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
@@ -24,6 +25,7 @@ export interface IInput {
 
 export interface IDeps {
   updateRepository: IUpdateRepository
+  stockUpdateRepository: IStockUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -70,6 +72,10 @@ export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Save the data to the database.
     const response = await this.deps.updateRepository.handle(input.filter._id, paymentStockEntity.data);
+
+    retrieveResponse.transactions?.forEach(async (element) => {
+      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'active' });
+    });
 
     // Create an audit log entry for this operation.
     const changes = this.deps.auditLogService.buildChanges(

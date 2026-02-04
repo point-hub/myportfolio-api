@@ -6,6 +6,7 @@ import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
 import { collectionName, PaymentStockEntity } from '../entity';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
@@ -44,6 +45,7 @@ export interface IInput {
 
 export interface IDeps {
   updateRepository: IUpdateRepository
+  stockUpdateRepository: IStockUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
@@ -95,6 +97,28 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       updated_at: new Date(),
       updated_by_id: input.authUser._id,
     });
+
+    const oldTransactions = retrieveResponse.transactions ?? [];
+    const newTransactions = paymentStockEntity.data.transactions ?? [];
+
+    // Map new transactions by stock_id
+    const newMap = new Map(newTransactions.map(t => [t.stock_id, t]));
+
+
+    // Mark all new/unchanged transactions as paid
+    for (const newTx of newTransactions) {
+      await this.deps.stockUpdateRepository.handle(newTx.stock_id!, { status: 'paid' });
+    }
+
+    // Handle removed transactions
+    for (const oldTx of oldTransactions) {
+      if (!newMap.has(oldTx.stock_id)) {
+        // Transaction removed, mark stock as active
+        if (oldTx.stock_id) {
+          await this.deps.stockUpdateRepository.handle(oldTx.stock_id, { status: 'active' });
+        }
+      }
+    }
 
     // Reject update when no fields have changed
     const changes = this.deps.auditLogService.buildChanges(
