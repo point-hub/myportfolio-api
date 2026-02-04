@@ -76,6 +76,7 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
 
     // Normalizes data (trim).
     const remainingAmount = roundNumber((input.data?.amount ?? 0) - (input.data?.received_amount ?? 0), 2);
+    const status = remainingAmount <= 0 ? 'withdrawn' : 'active';
     const data = {
       withdrawal: {
         amount: input.data?.amount,
@@ -87,7 +88,7 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
         created_by_id: input.authUser._id,
         created_at: new Date(),
       },
-      status: 'withdrawn',
+      status: status,
     };
 
     // Save the data to the database.

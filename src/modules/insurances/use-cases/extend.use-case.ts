@@ -110,7 +110,10 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    await this.deps.updateRepository.handle(input.filter._id, { status: 'renewed' });
+    await this.deps.updateRepository.handle(input.filter._id, {
+      status: 'renewed',
+      'withdrawal.remaining_amount': 0,
+    });
 
     // Check updated response.
     const retrieveUpdatedResponse = await this.deps.retrieveRepository.raw(input.filter._id);
