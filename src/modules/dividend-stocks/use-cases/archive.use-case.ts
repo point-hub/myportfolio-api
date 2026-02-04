@@ -1,14 +1,13 @@
 import { BaseUseCase, type IUseCaseOutputFailed, type IUseCaseOutputSuccess } from '@point-hub/papi';
 
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
-import type { IUniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
 import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
-import { collectionName, PaymentStockEntity } from '../entity';
+import { collectionName, DividendStockEntity } from '../entity';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 import type { IUpdateRepository } from '../repositories/update.repository';
 
@@ -19,27 +18,8 @@ export interface IInput {
   filter: {
     _id: string
   }
-  data?: {
-    broker_id?: string
-    payment_date?: string
-    transactions?: {
-      uuid?: string
-      stock_id?: string
-      date?: string
-      transaction_number?: number
-      amount?: number
-    }[]
-    total?: number
-    notes?: string | null | undefined
-    is_archived?: boolean | null
-    status?: 'draft' | 'active'
+  data: {
     update_reason?: string
-    created_at?: Date
-    created_by_id?: string
-    updated_at?: Date | null
-    updated_by_id?: string | null
-    archived_at?: Date | null
-    archived_by_id?: string | null
   }
 }
 
@@ -50,7 +30,6 @@ export interface IDeps {
   ablyService: IAblyService
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
-  uniqueValidationService: IUniqueValidationService
 }
 
 export interface ISuccessData {
@@ -59,90 +38,56 @@ export interface ISuccessData {
 }
 
 /**
- * Use case: Update Payment Stock.
+ * Use case: Archive Dividend Stock.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action
  * - Check if the record exists
  * - Normalizes data (trim).
- * - Check the insterest schedule amount should match with interest net amount.
- * - Reject update when no fields have changed
  * - Save the data to the database.
  * - Create an audit log entry for this operation.
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'payment-stocks:update');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'dividend-stocks:update');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
-    // Check if the record exists.
+    // Check if the record exists
     const retrieveResponse = await this.deps.retrieveRepository.raw(input.filter._id);
     if (!retrieveResponse) {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
     // Normalizes data (trim).
-    const paymentStockEntity = new PaymentStockEntity({
-      payment_date: input.data?.payment_date,
-      broker_id: input.data?.broker_id,
-      transactions: input.data?.transactions,
-      total: input.data?.total,
-      notes: input.data?.notes,
-      status: 'active',
-      updated_at: new Date(),
-      updated_by_id: input.authUser._id,
+    const dividendStockEntity = new DividendStockEntity({
+      is_archived: true,
+      archived_at: new Date,
+      archived_by_id: input.authUser._id,
     });
 
-    const oldTransactions = retrieveResponse.transactions ?? [];
-    const newTransactions = paymentStockEntity.data.transactions ?? [];
-
-    // Map new transactions by stock_id
-    const newMap = new Map(newTransactions.map(t => [t.stock_id, t]));
-
-
-    // Mark all new/unchanged transactions as paid
-    for (const newTx of newTransactions) {
-      await this.deps.stockUpdateRepository.handle(newTx.stock_id!, { status: 'paid' });
-    }
-
-    // Handle removed transactions
-    for (const oldTx of oldTransactions) {
-      if (!newMap.has(oldTx.stock_id)) {
-        // Transaction removed, mark stock as active
-        if (oldTx.stock_id) {
-          await this.deps.stockUpdateRepository.handle(oldTx.stock_id, { status: 'active' });
-        }
-      }
-    }
-
-    // Reject update when no fields have changed
-    const changes = this.deps.auditLogService.buildChanges(
-      retrieveResponse,
-      this.deps.auditLogService.mergeDefined(retrieveResponse, paymentStockEntity.data),
-    );
-    if (changes.summary.fields?.length === 0) {
-      return this.fail({ code: 400, message: 'No changes detected. Please modify at least one field before saving.' });
-    }
-
     // Save the data to the database.
-    const response = await this.deps.updateRepository.handle(input.filter._id, paymentStockEntity.data);
+    const response = await this.deps.updateRepository.handle(input.filter._id, dividendStockEntity.data);
 
     // Create an audit log entry for this operation.
+    const changes = this.deps.auditLogService.buildChanges(
+      retrieveResponse,
+      this.deps.auditLogService.mergeDefined(retrieveResponse, dividendStockEntity.data),
+    );
     const dataLog = {
       operation_id: this.deps.auditLogService.generateOperationId(),
       entity_type: collectionName,
       entity_id: input.filter._id,
-      entity_ref: `${retrieveResponse.form_number}`,
+      entity_ref: retrieveResponse.form_number!,
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'update',
-      module: 'payment-stocks',
+      action: 'archive',
+      module: 'dividend-stocks',
       system_reason: 'update data',
       user_reason: input.data?.update_reason,
       changes: changes,
@@ -158,13 +103,13 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Publish realtime notification event to the recipient’s channel.
     this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
-      type: 'payment_stocks',
+      type: 'dividend_stocks',
       actor_id: input.authUser._id,
       recipient_id: input.authUser._id,
       is_read: false,
       created_at: new Date(),
       entities: {
-        payment_stocks: input.filter._id,
+        dividend_stocks: input.filter._id,
       },
       data: dataLog,
     });

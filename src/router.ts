@@ -7,6 +7,7 @@ import ablyRouter from './modules/ably/router';
 import auditLogRouter from './modules/audit-logs/router';
 import counterRouter from './modules/counters/router';
 import depositRouter from './modules/deposits/router';
+import dividendStockRouter from './modules/dividend-stocks/router';
 import healthRouter from './modules/health/router';
 import insuranceRouter from './modules/insurances/router';
 import masterBankRouter from './modules/master/banks/router';
@@ -52,6 +53,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/savings', await savingRouter(baseRouterInput));
   app.use('/v1/stocks', await stockRouter(baseRouterInput));
   app.use('/v1/payment-stocks', await paymentStockRouter(baseRouterInput));
+  app.use('/v1/dividend-stocks', await dividendStockRouter(baseRouterInput));
 
   /**
    * Rendered email templates

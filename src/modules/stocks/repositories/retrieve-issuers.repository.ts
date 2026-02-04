@@ -1,34 +1,54 @@
 import type { IDatabase, IPagination, IPipeline, IQuery } from '@point-hub/papi';
 import { BaseMongoDBQueryFilters } from '@point-hub/papi';
 
+import type { IBroker } from '@/modules/master/brokers/interface';
+import type { IIssuer } from '@/modules/master/issuers/interface';
+import type { IOwner } from '@/modules/master/owners/interface';
+import type { IAuthUser } from '@/modules/master/users/interface';
 import { addDateRangeFilter } from '@/utils/date-range-filter';
 
 import { collectionName } from '../entity';
 import type { IStock } from '../interface';
-import type { IRetrieveOutput } from './retrieve.repository';
 
-export interface IRetrieveManyRepository {
-  handle(query: IQuery): Promise<IRetrieveManyOutput>
-  raw(query: IQuery): Promise<IRetrieveManyRawOutput>
+export interface IRetrieveOutput extends IStock {
+  broker?: IBroker
+  owner?: IOwner
+  buying_list?: {
+    uuid?: string
+    issuer_id?: string
+    issuer?: IIssuer
+    lots?: number
+    shares?: number
+    price?: number
+    total?: number
+  }[]
+  created_by?: IAuthUser
+  updated_by?: IAuthUser
+  archived_by?: IAuthUser
 }
 
-export interface IRetrieveManyOutput {
+export interface IRetrieveIssuersRepository {
+  handle(query: IQuery): Promise<IRetrieveIssuersOutput>
+  raw(query: IQuery): Promise<IRetrieveIssuersRawOutput>
+}
+
+export interface IRetrieveIssuersOutput {
   data: IRetrieveOutput[]
   pagination: IPagination
 }
 
-export interface IRetrieveManyRawOutput {
+export interface IRetrieveIssuersRawOutput {
   data: IStock[]
   pagination: IPagination
 }
 
-export class RetrieveManyRepository implements IRetrieveManyRepository {
+export class RetrieveIssuersRepository implements IRetrieveIssuersRepository {
   constructor(
     public database: IDatabase,
     public options?: Record<string, unknown>,
   ) { }
 
-  async handle(query: IQuery): Promise<IRetrieveManyOutput> {
+  async handle(query: IQuery): Promise<IRetrieveIssuersOutput> {
     const pipeline: IPipeline[] = [];
 
     pipeline.push(...this.pipeJoinCreatedById());
@@ -38,11 +58,8 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
       'buying_list.issuer_id',
       'buying_list.issuer',
     ));
-    pipeline.push(...this.pipeJoinListIssuer(
-      'selling_list.issuer_id',
-      'selling_list.issuer',
-    ));
     pipeline.push(...this.pipeQueryFilter(query));
+    pipeline.push(...this.pipeGroupByIssuer());
     pipeline.push(...this.pipeProject());
 
     const response = await this.database.collection(collectionName).aggregate<IRetrieveOutput>(pipeline, query, this.options);
@@ -60,7 +77,6 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           owner_id: item.owner_id,
           owner: item.owner,
           buying_list: item.buying_list,
-          selling_list: item.selling_list,
           buying_total: item.buying_total,
           buying_brokerage_fee: item.buying_brokerage_fee,
           buying_vat: item.buying_vat,
@@ -85,8 +101,24 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     };
   }
 
-  async raw(query: IQuery): Promise<IRetrieveManyRawOutput> {
+  async raw(query: IQuery): Promise<IRetrieveIssuersRawOutput> {
     return await this.database.collection(collectionName).retrieveMany<IStock>(query, this.options);
+  }
+
+  private pipeGroupByIssuer(): IPipeline[] {
+    return [
+      {
+        $group: {
+          _id: '$buying_list.issuer_id',
+          doc: { $first: '$$ROOT' },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: '$doc',
+        },
+      },
+    ];
   }
 
   private pipeQueryFilter(query: IQuery): IPipeline[] {
@@ -132,8 +164,9 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
 
+    BaseMongoDBQueryFilters.addExactFilter(filters, 'broker_id', query?.['search.broker_id']);
     BaseMongoDBQueryFilters.addExactFilter(filters, 'status', query?.['search.status']);
-
+    console.log(JSON.stringify(query));
     return filters.length > 0 ? [{ $match: { $and: filters } }] : [];
   }
 
@@ -227,6 +260,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     as: string,
   ): IPipeline[] {
     return [
+      { $unwind: { path: '$buying_list', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'issuers',
@@ -273,7 +307,6 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           owner: 1,
           transaction_number: 1,
           buying_list: 1,
-          selling_list: 1,
           buying_total: 1,
           buying_brokerage_fee: 1,
           buying_vat: 1,

@@ -4,7 +4,7 @@ import { BaseMongoDBQueryFilters } from '@point-hub/papi';
 import { addDateRangeFilter } from '@/utils/date-range-filter';
 
 import { collectionName } from '../entity';
-import type { IPaymentStock } from '../interface';
+import type { IDividendStock } from '../interface';
 import type { IRetrieveOutput } from './retrieve.repository';
 
 export interface IRetrieveManyRepository {
@@ -18,7 +18,7 @@ export interface IRetrieveManyOutput {
 }
 
 export interface IRetrieveManyRawOutput {
-  data: IPaymentStock[]
+  data: IDividendStock[]
   pagination: IPagination
 }
 
@@ -33,9 +33,11 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
 
     pipeline.push(...this.pipeJoinCreatedById());
     pipeline.push(...this.pipeJoinBrokerId());
-    pipeline.push(...this.pipeJoinTransactionsStock(
-      'transactions.stock_id',
-      'transactions.stock',
+    pipeline.push(...this.pipeJoinTransactions());
+    pipeline.push(...this.pipeJoinBankAccount(
+      'bank_id',
+      'bank_account_uuid',
+      'bank',
     ));
     pipeline.push(...this.pipeQueryFilter(query));
     pipeline.push(...this.pipeProject());
@@ -47,11 +49,14 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
         return {
           _id: item._id,
           form_number: item.form_number,
-          payment_date: item.payment_date,
+          dividend_date: item.dividend_date,
           broker_id: item.broker_id,
           broker: item.broker,
+          bank_id: item.bank_id,
+          bank_account_uuid: item.bank_account_uuid,
+          bank: item.bank,
           transactions: item.transactions,
-          total: item.total,
+          total_received: item.total_received,
           notes: item.notes,
           status: item.status,
           is_archived: item.is_archived,
@@ -62,7 +67,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
   }
 
   async raw(query: IQuery): Promise<IRetrieveManyRawOutput> {
-    return await this.database.collection(collectionName).retrieveMany<IPaymentStock>(query, this.options);
+    return await this.database.collection(collectionName).retrieveMany<IDividendStock>(query, this.options);
   }
 
   private pipeQueryFilter(query: IQuery): IPipeline[] {
@@ -80,13 +85,16 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter specific field
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'form_number', query?.['search.form_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'broker.name', query?.['search.broker.name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank.account.account_name', query?.['search.bank.account.account_name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank.account.account_number', query?.['search.bank.account.account_number']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'transactions.owner.name', query?.['search.transactions.owner.name']);
 
     // Filter date
-    addDateRangeFilter(filters, 'payment_date', query?.['search.payment_date_from'], query?.['search.payment_date_to']);
+    addDateRangeFilter(filters, 'dividend_date', query?.['search.dividend_date_from'], query?.['search.dividend_date_to']);
     addDateRangeFilter(filters, 'created_at', query?.['search.created_at_from'], query?.['search.created_at_to']);
 
     // Apply numeric filter using the helper function
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'total', query?.['search.total']);
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'total_received', query?.['search.total_received']);
 
     // Filter boolean
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
@@ -153,29 +161,39 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     ];
   }
 
-  private pipeJoinTransactionsStock(
-    stockIdPath: string,
+  private pipeJoinBankAccount(
+    bankIdPath: string,
+    accountUuidPath: string,
     as: string,
   ): IPipeline[] {
     return [
       {
         $lookup: {
-          from: 'stocks',
+          from: 'banks',
           let: {
-            stockId: `$${stockIdPath}`,
+            bankId: `$${bankIdPath}`,
+            accountUuid: `$${accountUuidPath}`,
           },
           pipeline: [
             {
               $match: {
-                $expr: { $eq: ['$_id', '$$stockId'] },
+                $expr: { $eq: ['$_id', '$$bankId'] },
               },
             },
             {
               $project: {
                 _id: 1,
-                transaction_date: 1,
-                transaction_number: 1,
-                proceed_amount: 1,
+                code: 1,
+                name: 1,
+                account: {
+                  $first: {
+                    $filter: {
+                      input: '$accounts',
+                      as: 'acc',
+                      cond: { $eq: ['$$acc.uuid', '$$accountUuid'] },
+                    },
+                  },
+                },
               },
             },
           ],
@@ -191,17 +209,108 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     ];
   }
 
+  private pipeJoinTransactions(): IPipeline[] {
+    return [
+      {
+        $lookup: {
+          from: 'issuers',
+          let: { issuerIds: '$transactions.issuer_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ['$_id', '$$issuerIds'] },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                code: 1,
+                name: 1,
+              },
+            },
+          ],
+          as: 'issuer_refs',
+        },
+      },
+      {
+        $lookup: {
+          from: 'owners',
+          let: { ownerIds: '$transactions.owner_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ['$_id', '$$ownerIds'] },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                code: 1,
+                name: 1,
+              },
+            },
+          ],
+          as: 'owner_refs',
+        },
+      },
+      {
+        $addFields: {
+          transactions: {
+            $map: {
+              input: '$transactions',
+              as: 'trx',
+              in: {
+                $mergeObjects: [
+                  '$$trx',
+                  {
+                    issuer: {
+                      $first: {
+                        $filter: {
+                          input: '$issuer_refs',
+                          as: 'iss',
+                          cond: { $eq: ['$$iss._id', '$$trx.issuer_id'] },
+                        },
+                      },
+                    },
+                    owner: {
+                      $first: {
+                        $filter: {
+                          input: '$owner_refs',
+                          as: 'own',
+                          cond: { $eq: ['$$own._id', '$$trx.owner_id'] },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          issuer_refs: 0,
+          owner_refs: 0,
+        },
+      },
+    ];
+  }
+
   private pipeProject(): IPipeline[] {
     return [
       {
         $project: {
           _id: 1,
           form_number: 1,
-          payment_date: 1,
+          dividend_date: 1,
           broker_id: 1,
           broker: 1,
+          bank_id: 1,
+          bank_account_uuid: 1,
+          bank: 1,
           transactions: 1,
-          total: 1,
+          total_received: 1,
           notes: 1,
           status: 1,
           is_archived: 1,

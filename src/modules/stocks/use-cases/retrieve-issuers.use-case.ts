@@ -2,11 +2,12 @@ import { BaseUseCase, type IQuery, type IUseCaseOutputFailed, type IUseCaseOutpu
 
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
 import type { IBroker } from '@/modules/master/brokers/interface';
+import type { IIssuer } from '@/modules/master/issuers/interface';
+import type { IOwner } from '@/modules/master/owners/interface';
 import type { IAuthUser } from '@/modules/master/users/interface';
-import type { IStock } from '@/modules/stocks/interface';
 
-import type { IPaymentStock } from '../interface';
-import type { IRetrieveManyRepository } from '../repositories/retrieve-many.repository';
+import type { IStock } from '../interface';
+import type { IRetrieveIssuersRepository } from '../repositories/retrieve-issuers.repository';
 
 export interface IInput {
   authUser: IAuthUser
@@ -14,23 +15,21 @@ export interface IInput {
 }
 
 export interface IDeps {
-  retrieveManyRepository: IRetrieveManyRepository
+  retrieveIssuersRepository: IRetrieveIssuersRepository
   authorizationService: IAuthorizationService
 }
 
-export interface IData extends IPaymentStock {
-  _id?: string
-  form_number?: string
-  broker_id?: string
+export interface IData extends IStock {
   broker?: IBroker
-  payment_date?: string
-  transactions?: {
+  owner?: IOwner
+  buying_list?: {
     uuid?: string
-    stock_id?: string
-    stock?: IStock
-    transaction_number?: number
-    date?: string
-    amount?: number
+    issuer_id?: string
+    issuer?: IIssuer
+    lots?: number
+    shares?: number
+    price?: number
+    total?: number
   }[]
   created_by?: IAuthUser
   updated_by?: IAuthUser
@@ -48,7 +47,7 @@ export interface ISuccessData {
 }
 
 /**
- * Use case: Retrieve Payment Stocks.
+ * Use case: Retrieve Stocks.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action
@@ -56,16 +55,16 @@ export interface ISuccessData {
  * - Optionally filter response fields using `query.fields`.
  * - Return a success response.
  */
-export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class RetrieveIssuersUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'payment-stocks:read');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'stocks:read');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
     // Retrieve all data from the database.
-    const response = await this.deps.retrieveManyRepository.handle(input.query);
+    const response = await this.deps.retrieveIssuersRepository.handle(input.query);
 
     // Optionally filter response fields using `query.fields`.
     const fields = typeof input.query.fields === 'string'
@@ -78,11 +77,29 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
         const mapped = {
           _id: item._id,
           form_number: item.form_number,
-          payment_date: item.payment_date,
+          transaction_date: item.transaction_date,
+          settlement_date: item.settlement_date,
           broker_id: item.broker_id,
           broker: item.broker,
-          transactions: item.transactions!,
-          total: item.total,
+          transaction_number: item.transaction_number!,
+          owner_id: item.owner_id,
+          owner: item.owner,
+          buying_list: item.buying_list,
+          buying_total: item.buying_total,
+          buying_brokerage_fee: item.buying_brokerage_fee,
+          buying_vat: item.buying_vat,
+          buying_levy: item.buying_levy,
+          buying_kpei: item.buying_kpei,
+          buying_stamp: item.buying_stamp,
+          buying_proceed: item.buying_proceed,
+          selling_total: item.selling_total,
+          selling_brokerage_fee: item.selling_brokerage_fee,
+          selling_vat: item.selling_vat,
+          selling_levy: item.selling_levy,
+          selling_kpei: item.selling_kpei,
+          selling_stamp: item.selling_stamp,
+          selling_proceed: item.selling_proceed,
+          proceed_amount: item.proceed_amount,
           notes: item.notes,
           status: item.status,
           is_archived: item.is_archived,

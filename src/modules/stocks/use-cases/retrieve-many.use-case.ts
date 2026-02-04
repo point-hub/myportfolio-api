@@ -25,7 +25,7 @@ export interface IData extends IStock {
   buying_list?: {
     uuid?: string
     issuer_id?: string
-    ssuer?: IIssuer
+    issuer?: IIssuer
     lots?: number
     shares?: number
     price?: number
@@ -34,7 +34,7 @@ export interface IData extends IStock {
   selling_list?: {
     uuid?: string
     issuer_id?: string
-    ssuer?: IIssuer
+    issuer?: IIssuer
     lots?: number
     shares?: number
     price?: number

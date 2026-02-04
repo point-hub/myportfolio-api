@@ -2,10 +2,11 @@ import { BaseUseCase, type IQuery, type IUseCaseOutputFailed, type IUseCaseOutpu
 
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
 import type { IBroker } from '@/modules/master/brokers/interface';
+import type { IIssuer } from '@/modules/master/issuers/interface';
+import type { IOwner } from '@/modules/master/owners/interface';
 import type { IAuthUser } from '@/modules/master/users/interface';
-import type { IStock } from '@/modules/stocks/interface';
 
-import type { IPaymentStock } from '../interface';
+import type { IDividendStock } from '../interface';
 import type { IRetrieveManyRepository } from '../repositories/retrieve-many.repository';
 
 export interface IInput {
@@ -18,20 +19,27 @@ export interface IDeps {
   authorizationService: IAuthorizationService
 }
 
-export interface IData extends IPaymentStock {
+export interface IData extends IDividendStock {
   _id?: string
   form_number?: string
   broker_id?: string
   broker?: IBroker
-  payment_date?: string
+  bank_id?: string
+  bank_account_uuid?: string
+  dividend_date?: string
   transactions?: {
     uuid?: string
-    stock_id?: string
-    stock?: IStock
-    transaction_number?: number
-    date?: string
-    amount?: number
+    issuer_id?: string
+    issuer?: IIssuer
+    owner_id?: string
+    owner?: IOwner
+    dividend_date?: string
+    shares?: number
+    dividend_amount?: number
+    total_amount?: number
+    received_amount?: number
   }[]
+  total_received?: number
   created_by?: IAuthUser
   updated_by?: IAuthUser
   archived_by?: IAuthUser
@@ -48,7 +56,7 @@ export interface ISuccessData {
 }
 
 /**
- * Use case: Retrieve Payment Stocks.
+ * Use case: Retrieve Dividend Stocks.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action
@@ -59,7 +67,7 @@ export interface ISuccessData {
 export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'payment-stocks:read');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'dividend-stocks:read');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
@@ -78,11 +86,14 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
         const mapped = {
           _id: item._id,
           form_number: item.form_number,
-          payment_date: item.payment_date,
+          dividend_date: item.dividend_date,
           broker_id: item.broker_id,
           broker: item.broker,
-          transactions: item.transactions!,
-          total: item.total,
+          bank_id: item.bank_id,
+          bank_account_uuid: item.bank_account_uuid,
+          bank: item.bank,
+          transactions: item.transactions,
+          total_received: item.total_received,
           notes: item.notes,
           status: item.status,
           is_archived: item.is_archived,

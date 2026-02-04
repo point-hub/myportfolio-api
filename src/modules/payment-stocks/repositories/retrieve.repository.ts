@@ -22,7 +22,7 @@ export interface IRetrieveOutput extends IPaymentStock {
     stock_id?: string
     stock?: IStock
     transaction_number?: number
-    date?: number
+    date?: string
     amount?: number
   }[]
   created_by?: IAuthUser

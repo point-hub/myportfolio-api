@@ -1,13 +1,14 @@
 import { BaseUseCase, type IUseCaseOutputFailed, type IUseCaseOutputSuccess } from '@point-hub/papi';
 
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
-import type { IUniqueValidationService } from '@/modules/_shared/services/unique-validation.service';
 import type { IUserAgent } from '@/modules/_shared/types/user-agent.type';
 import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
+import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
-import { collectionName, PaymentStockEntity } from '../entity';
+import { collectionName } from '../entity';
+import type { IDeleteRepository } from '../repositories/delete.repository';
 import type { IRetrieveRepository } from '../repositories/retrieve.repository';
 import type { IUpdateRepository } from '../repositories/update.repository';
 
@@ -18,89 +19,59 @@ export interface IInput {
   filter: {
     _id: string
   }
-  data?: {
-    broker_id?: string
-    payment_date?: string
-    transactions?: {
-      uuid?: string
-      stock_id?: string
-      date?: string
-      transaction_number?: number
-      amount?: number
-    }[]
-    total?: number
-    notes?: string | null | undefined
-    is_archived?: boolean | null
-    update_reason?: string
+  data: {
+    delete_reason?: string
   }
 }
 
 export interface IDeps {
+  deleteRepository: IDeleteRepository
   updateRepository: IUpdateRepository
+  stockUpdateRepository: IStockUpdateRepository
   retrieveRepository: IRetrieveRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
-  uniqueValidationService: IUniqueValidationService
 }
 
 export interface ISuccessData {
-  matched_count: number
-  modified_count: number
+  deleted_count: number
 }
 
 /**
- * Use case: Update Payment Stock.
+ * Use case: Delete Dividend Stock.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action
  * - Check if the record exists
- * - Normalizes data (trim).
- * - Reject update when no fields have changed
- * - Save the data to the database.
+ * - Delete the data from the database.
  * - Create an audit log entry for this operation.
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'payment-stocks:update');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'dividend-stocks:delete');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
-    // Check if the record exists.
+    // Check if the record exists
     const retrieveResponse = await this.deps.retrieveRepository.raw(input.filter._id);
     if (!retrieveResponse) {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    // Normalizes data (trim).
-    const paymentStockEntity = new PaymentStockEntity({
-      payment_date: input.data?.payment_date,
-      broker_id: input.data?.broker_id,
-      transactions: input.data?.transactions,
-      total: input.data?.total,
-      notes: input.data?.notes,
-      status: 'draft',
-      updated_at: new Date(),
-      updated_by_id: input.authUser._id,
+    // Delete the data from the database.
+    const response = await this.deps.deleteRepository.handle(input.filter._id);
+
+    retrieveResponse.transactions?.forEach(async (element) => {
+      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'active' });
     });
 
-    // Reject update when no fields have changed
-    const changes = this.deps.auditLogService.buildChanges(
-      retrieveResponse,
-      this.deps.auditLogService.mergeDefined(retrieveResponse, paymentStockEntity.data),
-    );
-    if (changes.summary.fields?.length === 0) {
-      return this.fail({ code: 400, message: 'No changes detected. Please modify at least one field before saving.' });
-    }
-
-    // Save the data to the database.
-    const response = await this.deps.updateRepository.handle(input.filter._id, paymentStockEntity.data);
-
     // Create an audit log entry for this operation.
+    const changes = this.deps.auditLogService.buildChanges(retrieveResponse, {});
     const dataLog = {
       operation_id: this.deps.auditLogService.generateOperationId(),
       entity_type: collectionName,
@@ -109,10 +80,10 @@ export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData>
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'update-draft',
-      module: 'payment-stocks',
+      action: 'delete',
+      module: 'dividend-stocks',
       system_reason: 'update data',
-      user_reason: input.data?.update_reason,
+      user_reason: input.data?.delete_reason,
       changes: changes,
       metadata: {
         ip: input.ip,
@@ -126,21 +97,20 @@ export class UpdateDraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData>
 
     // Publish realtime notification event to the recipient’s channel.
     this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
-      type: 'payment_stocks',
+      type: 'dividend_stocks',
       actor_id: input.authUser._id,
       recipient_id: input.authUser._id,
       is_read: false,
       created_at: new Date(),
       entities: {
-        payment_stocks: input.filter._id,
+        dividend_stocks: input.filter._id,
       },
       data: dataLog,
     });
 
     // Return a success response.
     return this.success({
-      matched_count: response.matched_count,
-      modified_count: response.modified_count,
+      deleted_count: response.deleted_count,
     });
   }
 }

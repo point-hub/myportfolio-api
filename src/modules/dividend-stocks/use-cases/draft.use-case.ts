@@ -7,9 +7,8 @@ import type { IAblyService } from '@/modules/ably/services/ably.service';
 import type { IAuditLogService } from '@/modules/audit-logs/services/audit-log.service';
 import type { ICodeGeneratorService } from '@/modules/counters/services/code-generator.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
-import type { IUpdateRepository as IStockUpdateRepository } from '@/modules/stocks/repositories/update.repository';
 
-import { collectionName, PaymentStockEntity } from '../entity';
+import { collectionName, DividendStockEntity } from '../entity';
 import type { ICreateRepository } from '../repositories/create.repository';
 
 export interface IInput {
@@ -19,16 +18,20 @@ export interface IInput {
   data: {
     _id?: string
     form_number?: string
+    dividend_date?: string
     broker_id?: string
-    payment_date?: string
+    bank_id?: string
+    bank_account_uuid?: string
     transactions?: {
       uuid?: string
-      stock_id?: string
-      date?: string
-      transaction_number?: number
-      amount?: number
+      issuer_id?: string
+      owner_id?: string
+      shares?: number
+      dividend_amount?: number
+      total_dividend?: number
+      received_amount?: number
     }[]
-    total?: number
+    total_received?: number
     notes?: string | null | undefined
     is_archived?: boolean | null
     status?: 'draft' | 'active'
@@ -37,7 +40,6 @@ export interface IInput {
 
 export interface IDeps {
   createRepository: ICreateRepository
-  stockUpdateRepository: IStockUpdateRepository
   ablyService: IAblyService
   auditLogService: IAuditLogService
   authorizationService: IAuthorizationService
@@ -50,59 +52,66 @@ export interface ISuccessData {
 }
 
 /**
- * Use case: Create Payment Stock.
+ * Use case: Create Dividend Stock.
  *
  * Responsibilities:
  * - Check whether the user is authorized to perform this action.
  * - Normalizes data (trim).
- * - Check the insterest schedule amount should match with interest net amount.
- * - Validate uniqueness: single unique form number field.
+ * - Validate uniqueness: single unique code field.
+ * - Validate uniqueness: single unique name field.
  * - Save the data to the database.
  * - Increment the code counter.
  * - Create an audit log entry for this operation.
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class DraftUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'payment-stocks:create');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'dividend-stocks:create');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }
 
     // Normalizes data (trim).
-    const paymentStockEntity = new PaymentStockEntity({
+    const dividendStockEntity = new DividendStockEntity({
       form_number: input.data.form_number,
-      payment_date: input.data.payment_date,
+      dividend_date: input.data.dividend_date,
       broker_id: input.data.broker_id,
-      transactions: input.data.transactions,
-      total: input.data.total,
+      bank_id: input.data.bank_id,
+      bank_account_uuid: input.data.bank_account_uuid,
+      transactions: input.data.transactions?.map(item => {
+        return {
+          issuer_id: item.issuer_id,
+          owner_id: item.owner_id,
+          shares: item.shares,
+          dividend_amount: item.dividend_amount,
+          total_dividend: item.total_dividend,
+          received_amount: item.received_amount,
+        };
+      }),
+      total_received: input.data.total_received,
       notes: input.data.notes,
       is_archived: false,
       created_at: new Date(),
       created_by_id: input.authUser._id,
-      status: 'active',
+      status: 'draft',
     });
 
-    // Validate uniqueness: form_number field.
+    // Validate uniqueness: single unique code field.
     const uniqueFormNumberErrors = await this.deps.uniqueValidationService.validate(collectionName, { form_number: input.data.form_number });
     if (uniqueFormNumberErrors) {
       return this.fail({ code: 422, message: 'Validation failed due to duplicate values.', errors: uniqueFormNumberErrors });
     }
 
     // Save the data to the database.
-    const createResponse = await this.deps.createRepository.handle(paymentStockEntity.data);
-
-    paymentStockEntity.data.transactions?.forEach(async (element) => {
-      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'paid' });
-    });
+    const createResponse = await this.deps.createRepository.handle(dividendStockEntity.data);
 
     // Increment the code counter.
     await this.deps.codeGeneratorService.increment(collectionName);
 
     // Create an audit log entry for this operation.
-    const changes = this.deps.auditLogService.buildChanges({}, paymentStockEntity.data);
+    const changes = this.deps.auditLogService.buildChanges({}, dividendStockEntity.data);
     const dataLog = {
       operation_id: this.deps.auditLogService.generateOperationId(),
       entity_type: collectionName,
@@ -111,8 +120,8 @@ export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       actor_type: 'user',
       actor_id: input.authUser._id,
       actor_name: input.authUser.username,
-      action: 'create',
-      module: 'payment-stocks',
+      action: 'draft',
+      module: 'dividend-stocks',
       system_reason: 'insert data',
       changes: changes,
       metadata: {
@@ -127,13 +136,13 @@ export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Publish realtime notification event to the recipient’s channel.
     this.deps.ablyService.publish(`notifications:${input.authUser._id}`, 'logs:new', {
-      type: 'payment_stocks',
+      type: 'dividend_stocks',
       actor_id: input.authUser._id,
       recipient_id: input.authUser._id,
       is_read: false,
       created_at: new Date(),
       entities: {
-        payment_stocks: createResponse.inserted_id,
+        dividend_stocks: createResponse.inserted_id,
       },
       data: dataLog,
     });

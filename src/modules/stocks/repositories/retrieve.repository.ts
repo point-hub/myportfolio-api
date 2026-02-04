@@ -19,7 +19,7 @@ export interface IRetrieveOutput extends IStock {
   buying_list?: {
     uuid?: string
     issuer_id?: string
-    ssuer?: IIssuer
+    issuer?: IIssuer
     lots?: number
     shares?: number
     price?: number
@@ -28,7 +28,7 @@ export interface IRetrieveOutput extends IStock {
   selling_list?: {
     uuid?: string
     issuer_id?: string
-    ssuer?: IIssuer
+    issuer?: IIssuer
     lots?: number
     shares?: number
     price?: number

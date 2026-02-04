@@ -1,16 +1,21 @@
-export interface IPaymentStock {
+export interface IDividendStock {
   _id?: string
   form_number?: string
   broker_id?: string
-  payment_date?: string
+  bank_id?: string
+  bank_account_uuid?: string
+  dividend_date?: string
   transactions?: {
     uuid?: string
-    stock_id?: string
-    date?: string
-    transaction_number?: number
-    amount?: number
+    issuer_id?: string
+    owner_id?: string
+    dividend_date?: string
+    shares?: number
+    dividend_amount?: number
+    total_dividend?: number
+    received_amount?: number
   }[]
-  total?: number
+  total_received?: number
   notes?: string | null | undefined
   is_archived?: boolean | null
   status?: 'draft' | 'active'

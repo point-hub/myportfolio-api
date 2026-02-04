@@ -23,7 +23,7 @@ export interface IInput {
     transactions?: {
       uuid?: string
       stock_id?: string
-      date?: number
+      date?: string
       transaction_number?: number
       amount?: number
     }[]
