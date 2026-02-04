@@ -61,10 +61,6 @@ export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    if (retrieveResponse.status === 'paid') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already paid' });
-    }
-
     // Normalizes data (trim).
     const stockEntity = new StockEntity({
       is_archived: true,

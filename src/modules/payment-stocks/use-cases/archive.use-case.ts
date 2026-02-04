@@ -73,10 +73,6 @@ export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
     // Save the data to the database.
     const response = await this.deps.updateRepository.handle(input.filter._id, paymentStockEntity.data);
 
-    retrieveResponse.transactions?.forEach(async (element) => {
-      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'active' });
-    });
-
     // Create an audit log entry for this operation.
     const changes = this.deps.auditLogService.buildChanges(
       retrieveResponse,

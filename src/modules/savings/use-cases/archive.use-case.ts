@@ -61,28 +61,6 @@ export class ArchiveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       return this.fail({ code: 404, message: 'Resource not found' });
     }
 
-    if (retrieveResponse.status === 'renewed') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already renewed' });
-    }
-
-    if (retrieveResponse.status === 'withdrawn') {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already withdrawn' });
-    }
-
-    const hasReceivedCashback = retrieveResponse.cashback_schedule?.some(
-      item => Number(item.received_amount) > 0,
-    );
-    if (hasReceivedCashback) {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in cashbacks' });
-    }
-
-    const hasReceivedInterests = retrieveResponse.interest_schedule?.some(
-      item => Number(item.received_amount) > 0,
-    );
-    if (hasReceivedInterests) {
-      return this.fail({ code: 400, message: 'Cannot delete this form because already have payment received in interests' });
-    }
-
     // Normalizes data (trim).
     const savingEntity = new SavingEntity({
       is_archived: true,
