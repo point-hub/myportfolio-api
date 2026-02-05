@@ -1,0 +1,49 @@
+export interface IReceivedCoupon {
+  date: string
+  amount: string
+  received_amount: string
+  remaining_amount: string
+}
+
+export interface IBond {
+  _id?: string
+  form_number?: string;
+  product?: string;
+  publisher?: string;
+  type?: string;
+  series?: string;
+  year_issued?: string;
+  bank_source_id?: string;
+  bank_source_account_uuid?: string;
+  bank_placement_id?: string;
+  bank_placement_account_uuid?: string;
+  owner_id?: string;
+  base_date?: number;
+  transaction_date?: string;
+  settlement_date?: string;
+  maturity_date?: string;
+  transaction_number?: number;
+  price?: number;
+  principal_amount?: number;
+  remaining_amount?: number;
+  proceed_amount?: number;
+  accrued_interest?: number;
+  total_proceed?: number;
+  coupon_tenor?: number;
+  coupon_rate?: number;
+  coupon_gross_amount?: number;
+  coupon_tax_rate?: number;
+  coupon_tax_amount?: number;
+  coupon_net_amount?: number;
+  coupon_date?: string;
+  received_coupons?: IReceivedCoupon[];
+  notes?: string | null;
+  is_archived?: boolean | null;
+  created_at?: Date;
+  created_by_id?: string;
+  updated_at?: Date | null;
+  updated_by_id?: string | null;
+  archived_at?: Date | null;
+  archived_by_id?: string | null;
+  status?: 'active' | 'draft';
+}
