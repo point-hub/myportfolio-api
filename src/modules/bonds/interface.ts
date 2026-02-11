@@ -1,8 +1,12 @@
 export interface IReceivedCoupon {
+  uuid: string
   date: string
-  amount: string
-  received_amount: string
-  remaining_amount: string
+  amount: number
+  received_date?: string
+  received_amount?: number
+  remaining_amount?: number
+  bank_id?: string
+  bank_account_uuid?: string
 }
 
 export interface IBond {
@@ -45,5 +49,6 @@ export interface IBond {
   updated_by_id?: string | null;
   archived_at?: Date | null;
   archived_by_id?: string | null;
-  status?: 'active' | 'draft';
+  status?: 'active' | 'draft' | 'completed';
+  coupon_status?: 'pending' | 'completed';
 }

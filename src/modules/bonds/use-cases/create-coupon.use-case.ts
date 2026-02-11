@@ -81,7 +81,7 @@ export interface ISuccessData {
  * - Publish realtime notification event to the recipient’s channel.
  * - Return a success response.
  */
-export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class CreateCouponUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
     const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'bonds:update');
@@ -97,48 +97,7 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
 
     // Normalizes data (trim).
     const bondEntity = new BondEntity({
-      product: input.data?.product,
-      publisher: input.data?.publisher,
-      type: input.data?.type,
-      series: input.data?.series,
-      year_issued: input.data?.year_issued,
-
-      bank_source_id: input.data?.bank_source_id,
-      bank_source_account_uuid: input.data?.bank_source_account_uuid,
-
-      bank_placement_id: input.data?.bank_placement_id,
-      bank_placement_account_uuid: input.data?.bank_placement_account_uuid,
-
-      owner_id: input.data?.owner_id,
-
-      base_date: input.data?.base_date,
-      transaction_date: input.data?.transaction_date,
-      settlement_date: input.data?.settlement_date,
-      maturity_date: input.data?.maturity_date,
-
-      transaction_number: input.data?.transaction_number,
-
-      price: input.data?.price,
-      principal_amount: input.data?.principal_amount,
-      proceed_amount: input.data?.proceed_amount,
-      accrued_interest: input.data?.accrued_interest,
-      total_proceed: input.data?.total_proceed,
-
-      coupon_tenor: input.data?.coupon_tenor,
-      coupon_rate: input.data?.coupon_rate,
-
-      coupon_gross_amount: input.data?.coupon_gross_amount,
-      coupon_tax_rate: input.data?.coupon_tax_rate,
-      coupon_tax_amount: input.data?.coupon_tax_amount,
-      coupon_net_amount: input.data?.coupon_net_amount,
-      coupon_date: input.data?.coupon_date,
       received_coupons: input.data?.received_coupons,
-
-      notes: input.data?.notes,
-      status: 'active',
-      coupon_status: 'pending',
-      updated_at: new Date(),
-      updated_by_id: input.authUser._id,
     });
 
     // Reject update when no fields have changed

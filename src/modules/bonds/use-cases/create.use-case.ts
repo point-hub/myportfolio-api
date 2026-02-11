@@ -124,11 +124,13 @@ export class CreateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       coupon_tax_amount: input.data.coupon_tax_amount,
       coupon_net_amount: input.data.coupon_net_amount,
       coupon_date: input.data.coupon_date,
+      received_coupons: input.data.received_coupons,
 
       notes: input.data.notes,
       is_archived: false,
       created_at: new Date(),
       created_by_id: input.authUser._id,
+      coupon_status: 'pending',
       status: 'active',
     });
 

@@ -9,5 +9,6 @@ export class BondEntity extends BaseEntity<IBond> {
     super();
 
     this.data = this.normalize(this.data);
+    this.data.received_coupons = this.ensureUUID(this.data.received_coupons);
   }
 }

@@ -1,9 +1,12 @@
 export { archiveController } from './archive.controller';
 export { createController } from './create.controller';
+export { createCouponController } from './create-coupon.controller';
 export { deleteController } from './delete.controller';
+export { deleteCouponController } from './delete-coupon.controller';
 export { draftController } from './draft.controller';
 export { restoreController } from './restore.controller';
 export { retrieveController } from './retrieve.controller';
+export { retrieveCouponsController } from './retrieve-coupons.controller';
 export { retrieveManyController } from './retrieve-many.controller';
 export { updateController } from './update.controller';
 export { updateDraftController } from './update-draft.controller';

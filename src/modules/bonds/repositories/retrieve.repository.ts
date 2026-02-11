@@ -43,6 +43,8 @@ export class RetrieveRepository implements IRetrieveRepository {
       'bank_placement_account_uuid',
       'bank_placement',
     ));
+
+    pipeline.push(...this.pipeJoinReceivedCouponBank());
     pipeline.push(...this.pipeProject());
 
     const response = await this.database.collection(collectionName).aggregate<IRetrieveOutput>(pipeline, {}, this.options);
@@ -90,9 +92,12 @@ export class RetrieveRepository implements IRetrieveRepository {
       coupon_tax_rate: response.data[0].coupon_tax_rate,
       coupon_tax_amount: response.data[0].coupon_tax_amount,
       coupon_net_amount: response.data[0].coupon_net_amount,
+      coupon_date: response.data[0].coupon_date,
+      received_coupons: response.data[0].received_coupons,
 
       notes: response.data[0].notes,
       status: response.data[0].status,
+      coupon_status: response.data[0].coupon_status,
       is_archived: response.data[0].is_archived,
     };
   }
@@ -215,6 +220,73 @@ export class RetrieveRepository implements IRetrieveRepository {
     ];
   }
 
+
+  private pipeJoinReceivedCouponBank(): IPipeline[] {
+    return [
+      {
+        $lookup: {
+          from: 'banks',
+          localField: 'received_coupons.bank_id',
+          foreignField: '_id',
+          as: '__banks_temp',
+        },
+      },
+      {
+        $set: {
+          received_coupons: {
+            $map: {
+              input: { $ifNull: ['$received_coupons', []] },
+              as: 'item',
+              in: {
+                $mergeObjects: [
+                  '$$item',
+                  {
+                    bank: {
+                      $let: {
+                        vars: {
+                          bankMatched: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: '$__banks_temp',
+                                  as: 'b',
+                                  cond: { $eq: ['$$b._id', '$$item.bank_id'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                        in: {
+                          _id: '$$bankMatched._id',
+                          code: '$$bankMatched.code',
+                          name: '$$bankMatched.name',
+                          account: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: { $ifNull: ['$$bankMatched.accounts', []] },
+                                  as: 'acc',
+                                  cond: { $eq: ['$$acc.uuid', '$$item.bank_account_uuid'] },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      { $unset: '__banks_temp' },
+    ];
+  }
+
   private pipeProject(): IPipeline[] {
     return [
       {
@@ -255,10 +327,12 @@ export class RetrieveRepository implements IRetrieveRepository {
           coupon_tax_amount: 1,
           coupon_net_amount: 1,
           coupon_date: 1,
+          received_coupons: 1,
 
           notes: 1,
           is_archived: 1,
           status: 1,
+          coupon_status: 1,
           created_at: 1,
           created_by_id: 1,
           created_by: 1,

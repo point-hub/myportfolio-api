@@ -6,7 +6,7 @@ import type { IOwner } from '@/modules/master/owners/interface';
 import type { IAuthUser } from '@/modules/master/users/interface';
 
 import type { IBond } from '../interface';
-import type { IRetrieveManyRepository } from '../repositories/retrieve-many.repository';
+import type { IRetrieveCouponsRepository } from '../repositories/retrieve-coupons.repository';
 
 export interface IInput {
   authUser: IAuthUser
@@ -14,7 +14,7 @@ export interface IInput {
 }
 
 export interface IDeps {
-  retrieveManyRepository: IRetrieveManyRepository
+  retrieveCouponsRepository: IRetrieveCouponsRepository
   authorizationService: IAuthorizationService
 }
 
@@ -46,7 +46,7 @@ export interface ISuccessData {
  * - Optionally filter response fields using `query.fields`.
  * - Return a success response.
  */
-export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
+export class RetrieveCouponsUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
     // Check whether the user is authorized to perform this action
     const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'bonds:read');
@@ -55,7 +55,7 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
     }
 
     // Retrieve all data from the database.
-    const response = await this.deps.retrieveManyRepository.handle(input.query);
+    const response = await this.deps.retrieveCouponsRepository.handle(input.query);
 
     // Optionally filter response fields using `query.fields`.
     const fields = typeof input.query.fields === 'string'

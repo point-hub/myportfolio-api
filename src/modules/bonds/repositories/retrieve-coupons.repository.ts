@@ -1,34 +1,45 @@
 import type { IDatabase, IPagination, IPipeline, IQuery } from '@point-hub/papi';
 import { BaseMongoDBQueryFilters } from '@point-hub/papi';
 
+import type { IBank } from '@/modules/master/banks/interface';
+import type { IOwner } from '@/modules/master/owners/interface';
+import type { IAuthUser } from '@/modules/master/users/interface';
 import { addDateRangeFilter } from '@/utils/date-range-filter';
 
 import { collectionName } from '../entity';
 import type { IBond } from '../interface';
-import type { IRetrieveOutput } from './retrieve.repository';
 
-export interface IRetrieveManyRepository {
-  handle(query: IQuery): Promise<IRetrieveManyOutput>
-  raw(query: IQuery): Promise<IRetrieveManyRawOutput>
+export interface IRetrieveCouponsRepository {
+  handle(query: IQuery): Promise<IRetrieveCouponsOutput>
+  raw(query: IQuery): Promise<IRetrieveCouponsRawOutput>
 }
 
-export interface IRetrieveManyOutput {
+export interface IRetrieveOutput extends IBond {
+  bank_source?: IBank
+  bank_placement?: IBank
+  owner?: IOwner
+  created_by?: IAuthUser
+  updated_by?: IAuthUser
+  archived_by?: IAuthUser
+}
+
+export interface IRetrieveCouponsOutput {
   data: IRetrieveOutput[]
   pagination: IPagination
 }
 
-export interface IRetrieveManyRawOutput {
+export interface IRetrieveCouponsRawOutput {
   data: IBond[]
   pagination: IPagination
 }
 
-export class RetrieveManyRepository implements IRetrieveManyRepository {
+export class RetrieveCouponsRepository implements IRetrieveCouponsRepository {
   constructor(
     public database: IDatabase,
     public options?: Record<string, unknown>,
   ) { }
 
-  async handle(query: IQuery): Promise<IRetrieveManyOutput> {
+  async handle(query: IQuery): Promise<IRetrieveCouponsOutput> {
     const pipeline: IPipeline[] = [];
 
     pipeline.push(...this.pipeJoinCreatedById());
@@ -42,6 +53,18 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
       'bank_placement_id',
       'bank_placement_account_uuid',
       'bank_placement',
+    ));
+    pipeline.push({
+      $unwind: {
+        path: '$received_coupons',
+        preserveNullAndEmptyArrays: true,
+      },
+    });
+
+    pipeline.push(...this.pipeJoinBankAccount(
+      'received_coupos.bank_id',
+      'received_coupos.bank_account_uuid',
+      'received_coupos.bank',
     ));
     pipeline.push(...this.pipeQueryFilter(query));
     pipeline.push(...this.pipeProject());
@@ -103,7 +126,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     };
   }
 
-  async raw(query: IQuery): Promise<IRetrieveManyRawOutput> {
+  async raw(query: IQuery): Promise<IRetrieveCouponsRawOutput> {
     return await this.database.collection(collectionName).retrieveMany<IBond>(query, this.options);
   }
 
@@ -161,7 +184,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // General search across multiple fields
     if (query?.['search.all']) {
       const searchRegex = { $regex: query?.['search.all'], $options: 'i' };
-      const fields = ['form_number', 'owner.name', 'broker.name', 'transaction_number'];
+      const fields = ['form_number', 'owner.name', 'product', 'type'];
       filters.push({
         $or: fields.map((field) => ({ [field]: searchRegex })),
       });
@@ -170,28 +193,14 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter specific field
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'form_number', query?.['search.form_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'owner.name', query?.['search.owner.name']);
-    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_source.account.account_number', query?.['search.bank_source.account.account_number']);
-    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_source.account.account_name', query?.['search.bank_source.account.account_name']);
-    BaseMongoDBQueryFilters.addRegexFilter(filters, 'transaction_number', query?.['search.transaction_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'product', query?.['search.product']);
-    BaseMongoDBQueryFilters.addRegexFilter(filters, 'series', query?.['search.series']);
-    BaseMongoDBQueryFilters.addRegexFilter(filters, 'year_issued', query?.['search.year_issued']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'type', query?.['search.type']);
 
     // Filter date
-    addDateRangeFilter(filters, 'transaction_date', query?.['search.transaction_date_from'], query?.['search.transaction_date_to']);
-    addDateRangeFilter(filters, 'settlement_date', query?.['search.settlement_date_from'], query?.['search.settlement_date_to']);
-    addDateRangeFilter(filters, 'maturity_date', query?.['search.maturity_date_from'], query?.['search.maturity_date_to']);
+    addDateRangeFilter(filters, 'received_coupons.date', query?.['search.received_coupons.date_from'], query?.['search.received_coupons.date_to']);
     addDateRangeFilter(filters, 'created_at', query?.['search.created_at_from'], query?.['search.created_at_to']);
 
     // Apply numeric filter using the helper function
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'base_date', query?.['search.base_date']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'price', query?.['search.price']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'principal_amount', query?.['search.principal_amount']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'remaining_amount', query?.['search.remaining_amount']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'proceed_amount', query?.['search.proceed_amount']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'accrued_interest', query?.['search.accrued_interest']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'total_proceed', query?.['search.total_proceed']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'coupon_rate', query?.['search.coupon_rate']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'coupon_gross_amount', query?.['search.coupon_gross_amount']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'coupon_tax_rate', query?.['search.coupon_tax_rate']);
@@ -202,6 +211,22 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     BaseMongoDBQueryFilters.addBooleanFilter(filters, 'is_archived', query?.['search.is_archived']);
 
     BaseMongoDBQueryFilters.addExactFilter(filters, 'status', query?.['search.status']);
+
+    if (query?.['search.coupon_status']) {
+      if (query?.['search.coupon_status'] === 'completed') {
+        filters.push(
+          {
+            'received_coupons.received_date': { $exists: true },
+          },
+        );
+      } else if (query?.['search.coupon_status'] === 'pending') {
+        filters.push(
+          {
+            'received_coupons.received_date': { $exists: false },
+          },
+        );
+      }
+    }
 
     return filters.length > 0 ? [{ $match: { $and: filters } }] : [];
   }

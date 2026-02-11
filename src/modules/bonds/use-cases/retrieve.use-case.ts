@@ -64,12 +64,15 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       series: response.series,
       year_issued: response.year_issued,
 
+      bank_source: response.bank_source,
       bank_source_id: response.bank_source_id,
       bank_source_account_uuid: response.bank_source_account_uuid,
 
+      bank_placement: response.bank_placement,
       bank_placement_id: response.bank_placement_id,
       bank_placement_account_uuid: response.bank_placement_account_uuid,
 
+      owner: response.owner,
       owner_id: response.owner_id,
 
       base_date: response.base_date,
@@ -92,9 +95,12 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       coupon_tax_rate: response.coupon_tax_rate,
       coupon_tax_amount: response.coupon_tax_amount,
       coupon_net_amount: response.coupon_net_amount,
+      coupon_date: response.coupon_date,
+      received_coupons: response.received_coupons,
 
       notes: response.notes,
       status: response.status,
+      coupon_status: response.coupon_status,
       is_archived: response.is_archived,
     });
   }
