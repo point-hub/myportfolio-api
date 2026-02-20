@@ -31,6 +31,7 @@ export interface IInput {
     received_additional_payment_date?: string
     received_additional_payment_amount?: number
     remaining_amount?: number
+    notes?: string
   }
 }
 
@@ -94,6 +95,7 @@ export class ReceiveCashbackUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
       received_additional_payment_date: input.data?.received_additional_payment_date,
       received_additional_payment_amount: input.data?.received_additional_payment_amount,
       remaining_amount: remainingAmount,
+      notes: input.data?.notes,
       created_by_id: input.authUser._id,
       created_at: new Date(),
     };

@@ -67,7 +67,7 @@ export class DeleteUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
     const response = await this.deps.deleteRepository.handle(input.filter._id);
 
     retrieveResponse.transactions?.forEach(async (element) => {
-      await this.deps.stockUpdateRepository.handle(element.stock_id!, { status: 'active' });
+      await this.deps.stockUpdateRepository.handle(element.issuer_id!, { status: 'active' });
     });
 
     // Create an audit log entry for this operation.

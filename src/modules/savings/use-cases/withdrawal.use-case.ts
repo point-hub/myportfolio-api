@@ -26,6 +26,7 @@ export interface IInput {
     received_date?: string
     received_amount?: number
     remaining_amount?: number
+    notes?: string
   }
 }
 
@@ -84,6 +85,7 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
         received_date: input.data?.received_date,
         received_amount: input.data?.received_amount,
         remaining_amount: remainingAmount,
+        notes: input.data?.notes,
         created_by_id: input.authUser._id,
         created_at: new Date(),
       },
