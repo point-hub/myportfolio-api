@@ -43,6 +43,11 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
       'bank_placement_account_uuid',
       'bank_placement',
     ));
+    pipeline.push(...this.pipeJoinBankAccount(
+      'disbursement_bank_id',
+      'disbursement_bank_account_uuid',
+      'disbursement_bank',
+    ));
     pipeline.push(...this.pipeQueryFilter(query));
     pipeline.push(...this.pipeProject());
 
@@ -92,6 +97,16 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           coupon_net_amount: item.coupon_net_amount,
           coupon_date: item.coupon_date,
           received_coupons: item.received_coupons,
+
+          selling_price: item.selling_price,
+          disbursement_date: item.disbursement_date,
+          disbursement_amount: item.disbursement_amount,
+          disbursement_amount_difference: item.disbursement_amount_difference,
+          disbursement_amount_received: item.disbursement_amount_received,
+          disbursement_bank: item.disbursement_bank,
+          disbursement_bank_id: item.disbursement_bank_id,
+          disbursement_bank_account_uuid: item.disbursement_bank_account_uuid,
+          disbursement_remaining: item.disbursement_remaining,
 
           notes: item.notes,
           status: item.status,
@@ -170,8 +185,15 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter specific field
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'form_number', query?.['search.form_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'owner.name', query?.['search.owner.name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_source.name', query?.['search.bank_source.name']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_source.account.account_number', query?.['search.bank_source.account.account_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_source.account.account_name', query?.['search.bank_source.account.account_name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_placement.name', query?.['search.bank_placement.name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_placement.account.account_number', query?.['search.bank_placement.account.account_number']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'bank_placement.account.account_name', query?.['search.bank_placement.account.account_name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'disbursement_bank.name', query?.['search.disbursement_bank.name']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'disbursement_bank.account.account_number', query?.['search.disbursement_bank.account.account_number']);
+    BaseMongoDBQueryFilters.addRegexFilter(filters, 'disbursement_bank.account.account_name', query?.['search.disbursement_bank.account.account_name']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'transaction_number', query?.['search.transaction_number']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'product', query?.['search.product']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'series', query?.['search.series']);
@@ -304,6 +326,16 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           coupon_net_amount: 1,
           coupon_date: 1,
           received_coupons: 1,
+
+          selling_price: 1,
+          disbursement_date: 1,
+          disbursement_amount: 1,
+          disbursement_amount_difference: 1,
+          disbursement_amount_received: 1,
+          disbursement_bank: 1,
+          disbursement_bank_id: 1,
+          disbursement_bank_account_uuid: 1,
+          disbursement_remaining: 1,
 
           notes: 1,
           is_archived: 1,

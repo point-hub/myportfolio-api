@@ -108,6 +108,16 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
           coupon_date: item.coupon_date,
           received_coupons: item.received_coupons,
 
+          selling_price: item.selling_price,
+          disbursement_date: item.disbursement_date,
+          disbursement_amount: item.disbursement_amount,
+          disbursement_amount_difference: item.disbursement_amount_difference,
+          disbursement_amount_received: item.disbursement_amount_received,
+          disbursement_bank: item.disbursement_bank,
+          disbursement_bank_id: item.disbursement_bank_id,
+          disbursement_bank_account_uuid: item.disbursement_bank_account_uuid,
+          disbursement_remaining: item.disbursement_remaining,
+
           notes: item.notes,
           status: item.status,
           coupon_status: item.coupon_status,

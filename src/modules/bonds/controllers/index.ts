@@ -1,6 +1,7 @@
 export { archiveController } from './archive.controller';
 export { createController } from './create.controller';
 export { createCouponController } from './create-coupon.controller';
+export { createSellController } from './create-sell.controller';
 export { deleteController } from './delete.controller';
 export { deleteCouponController } from './delete-coupon.controller';
 export { draftController } from './draft.controller';

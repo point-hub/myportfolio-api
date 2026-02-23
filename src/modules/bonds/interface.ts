@@ -21,6 +21,8 @@ export interface IBond {
   bank_source_account_uuid?: string;
   bank_placement_id?: string;
   bank_placement_account_uuid?: string;
+  bank_disbursement_id?: string;
+  bank_disbursement_account_uuid?: string;
   owner_id?: string;
   base_date?: number;
   transaction_date?: string;
@@ -41,6 +43,15 @@ export interface IBond {
   coupon_net_amount?: number;
   coupon_date?: string;
   received_coupons?: IReceivedCoupon[];
+  disbursement_date?: string;
+  disbursement_bank?: string;
+  disbursement_bank_id?: string;
+  disbursement_bank_account_uuid?: string;
+  disbursement_amount?: number;
+  disbursement_amount_received?: number;
+  disbursement_amount_difference?: number;
+  disbursement_remaining?: number;
+  selling_price?: number;
   notes?: string | null;
   is_archived?: boolean | null;
   created_at?: Date;

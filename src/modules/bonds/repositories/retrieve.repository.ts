@@ -95,6 +95,15 @@ export class RetrieveRepository implements IRetrieveRepository {
       coupon_date: response.data[0].coupon_date,
       received_coupons: response.data[0].received_coupons,
 
+      selling_price: response.data[0].selling_price,
+      disbursement_date: response.data[0].disbursement_date,
+      disbursement_amount: response.data[0].disbursement_amount,
+      disbursement_amount_difference: response.data[0].disbursement_amount_difference,
+      disbursement_amount_received: response.data[0].disbursement_amount_received,
+      disbursement_bank_id: response.data[0].disbursement_bank_id,
+      disbursement_bank_account_uuid: response.data[0].disbursement_bank_account_uuid,
+      disbursement_remaining: response.data[0].disbursement_remaining,
+
       notes: response.data[0].notes,
       status: response.data[0].status,
       coupon_status: response.data[0].coupon_status,
@@ -328,6 +337,15 @@ export class RetrieveRepository implements IRetrieveRepository {
           coupon_net_amount: 1,
           coupon_date: 1,
           received_coupons: 1,
+
+          selling_price: 1,
+          disbursement_date: 1,
+          disbursement_amount: 1,
+          disbursement_amount_difference: 1,
+          disbursement_amount_received: 1,
+          disbursement_bank_id: 1,
+          disbursement_bank_account_uuid: 1,
+          disbursement_remaining: 1,
 
           notes: 1,
           is_archived: 1,
