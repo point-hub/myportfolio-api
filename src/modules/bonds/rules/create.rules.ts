@@ -10,6 +10,7 @@ export const createRules = {
   transaction_date: ['required', 'string'],
   settlement_date: ['required', 'string'],
   maturity_date: ['required', 'string'],
+  last_coupon_date: ['required', 'string'],
   bank_placement_id: ['required', 'string'],
   bank_placement_account_uuid: ['required', 'string'],
   bank_source_id: ['required', 'string'],

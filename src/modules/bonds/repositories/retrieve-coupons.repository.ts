@@ -57,14 +57,19 @@ export class RetrieveCouponsRepository implements IRetrieveCouponsRepository {
     pipeline.push({
       $unwind: {
         path: '$received_coupons',
-        preserveNullAndEmptyArrays: true,
+        preserveNullAndEmptyArrays: false,
       },
     });
+    pipeline.push(...this.pipeJoinBankAccount(
+      'disbursement_bank_id',
+      'disbursement_bank_account_uuid',
+      'disbursement_bank',
+    ));
 
     pipeline.push(...this.pipeJoinBankAccount(
-      'received_coupos.bank_id',
-      'received_coupos.bank_account_uuid',
-      'received_coupos.bank',
+      'received_coupons.bank_id',
+      'received_coupons.bank_account_uuid',
+      'received_coupons.bank',
     ));
     pipeline.push(...this.pipeQueryFilter(query));
     pipeline.push(...this.pipeProject());
