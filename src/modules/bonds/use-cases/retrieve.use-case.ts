@@ -102,11 +102,12 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       selling_price: response.selling_price,
       disbursement_date: response.disbursement_date,
       disbursement_amount: response.disbursement_amount,
-      disbursement_amount_difference: response.disbursement_amount_difference,
+      disbursement_amount_remaining: response.disbursement_amount_remaining,
       disbursement_amount_received: response.disbursement_amount_received,
       disbursement_bank_id: response.disbursement_bank_id,
       disbursement_bank_account_uuid: response.disbursement_bank_account_uuid,
       disbursement_remaining: response.disbursement_remaining,
+      disbursement_notes: response.disbursement_notes,
 
       notes: response.notes,
       status: response.status,

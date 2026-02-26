@@ -53,8 +53,9 @@ export interface IInput {
     disbursement_bank_account_uuid?: string;
     disbursement_amount?: number;
     disbursement_amount_received?: number;
-    disbursement_amount_difference?: number;
+    disbursement_amount_remaining?: number;
     disbursement_remaining?: number;
+    disbursement_notes?: string;
     selling_price?: number;
     notes?: string | null;
     update_reason?: string,
@@ -110,7 +111,9 @@ export class CreateSellUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
       disbursement_bank_account_uuid: input.data?.disbursement_bank_account_uuid,
       disbursement_amount: input.data?.disbursement_amount,
       disbursement_amount_received: input.data?.disbursement_amount_received,
-      disbursement_amount_difference: input.data?.disbursement_amount_difference,
+      disbursement_amount_remaining: input.data?.disbursement_amount_remaining,
+      disbursement_notes: input.data?.disbursement_notes,
+      remaining_amount: input.data?.remaining_amount,
       selling_price: input.data?.selling_price,
 
       status: 'completed',

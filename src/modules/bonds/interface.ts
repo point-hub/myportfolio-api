@@ -50,8 +50,9 @@ export interface IBond {
   disbursement_bank_account_uuid?: string;
   disbursement_amount?: number;
   disbursement_amount_received?: number;
-  disbursement_amount_difference?: number;
+  disbursement_amount_remaining?: number;
   disbursement_remaining?: number;
+  disbursement_notes?: string;
   selling_price?: number;
   notes?: string | null;
   is_archived?: boolean | null;

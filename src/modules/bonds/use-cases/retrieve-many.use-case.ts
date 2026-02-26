@@ -95,6 +95,7 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
 
           price: item.price,
           principal_amount: item.principal_amount,
+          remaining_amount: item.remaining_amount,
           proceed_amount: item.proceed_amount,
           accrued_interest: item.accrued_interest,
           total_proceed: item.total_proceed,
@@ -112,12 +113,13 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
           selling_price: item.selling_price,
           disbursement_date: item.disbursement_date,
           disbursement_amount: item.disbursement_amount,
-          disbursement_amount_difference: item.disbursement_amount_difference,
+          disbursement_amount_remaining: item.disbursement_amount_remaining,
           disbursement_amount_received: item.disbursement_amount_received,
           disbursement_bank: item.disbursement_bank,
           disbursement_bank_id: item.disbursement_bank_id,
           disbursement_bank_account_uuid: item.disbursement_bank_account_uuid,
           disbursement_remaining: item.disbursement_remaining,
+          disbursement_notes: item.disbursement_notes,
 
           notes: item.notes,
           status: item.status,
