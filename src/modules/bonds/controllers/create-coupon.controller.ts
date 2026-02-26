@@ -8,7 +8,7 @@ import { AuditLogService } from '@/modules/audit-logs/services/audit-log.service
 
 import { RetrieveRepository } from '../repositories/retrieve.repository';
 import { UpdateRepository } from '../repositories/update.repository';
-import { updateRules } from '../rules/update.rules';
+import { createCouponRules } from '../rules/create-coupon.rules';
 import { CreateCouponUseCase } from '../use-cases/create-coupon.use-case';
 
 export const createCouponController: IController = async (controllerInput: IControllerInput) => {
@@ -19,7 +19,7 @@ export const createCouponController: IController = async (controllerInput: ICont
     session.startTransaction();
 
     // Validate request body against schema
-    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], updateRules);
+    const schemaValidationResponse = SchemaValidationService.validate(controllerInput.req['body'], createCouponRules);
     if (schemaValidationResponse) {
       controllerInput.res.status(schemaValidationResponse.code);
       controllerInput.res.statusMessage = schemaValidationResponse.message;
