@@ -79,6 +79,7 @@ export class RetrieveUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       transaction_date: response.transaction_date,
       settlement_date: response.settlement_date,
       maturity_date: response.maturity_date,
+      last_coupon_date: response.last_coupon_date,
 
       transaction_number: response.transaction_number,
 

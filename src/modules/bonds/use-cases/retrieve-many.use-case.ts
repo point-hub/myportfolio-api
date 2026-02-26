@@ -89,6 +89,7 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
           transaction_date: item.transaction_date,
           settlement_date: item.settlement_date,
           maturity_date: item.maturity_date,
+          last_coupon_date: item.last_coupon_date,
 
           transaction_number: item.transaction_number,
 

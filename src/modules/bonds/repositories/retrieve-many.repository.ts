@@ -79,6 +79,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           transaction_date: item.transaction_date,
           settlement_date: item.settlement_date,
           maturity_date: item.maturity_date,
+          last_coupon_date: item.last_coupon_date,
 
           transaction_number: item.transaction_number,
 
@@ -204,6 +205,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     addDateRangeFilter(filters, 'transaction_date', query?.['search.transaction_date_from'], query?.['search.transaction_date_to']);
     addDateRangeFilter(filters, 'settlement_date', query?.['search.settlement_date_from'], query?.['search.settlement_date_to']);
     addDateRangeFilter(filters, 'maturity_date', query?.['search.maturity_date_from'], query?.['search.maturity_date_to']);
+    addDateRangeFilter(filters, 'last_coupon_date', query?.['search.last_coupon_date_from'], query?.['search.last_coupon_date_to']);
     addDateRangeFilter(filters, 'created_at', query?.['search.created_at_from'], query?.['search.created_at_to']);
 
     // Apply numeric filter using the helper function
@@ -300,6 +302,7 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           transaction_date: 1,
           settlement_date: 1,
           maturity_date: 1,
+          last_coupon_date: 1,
 
           bank_source_account_uuid: 1,
           bank_source_id: 1,

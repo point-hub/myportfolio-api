@@ -76,6 +76,7 @@ export class RetrieveRepository implements IRetrieveRepository {
       transaction_date: response.data[0].transaction_date,
       settlement_date: response.data[0].settlement_date,
       maturity_date: response.data[0].maturity_date,
+      last_coupon_date: response.data[0].last_coupon_date,
 
       transaction_number: response.data[0].transaction_number,
 
@@ -311,6 +312,7 @@ export class RetrieveRepository implements IRetrieveRepository {
           transaction_date: 1,
           settlement_date: 1,
           maturity_date: 1,
+          last_coupon_date: 1,
 
           bank_source_account_uuid: 1,
           bank_source_id: 1,

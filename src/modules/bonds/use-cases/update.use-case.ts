@@ -34,6 +34,7 @@ export interface IInput {
     transaction_date?: string;
     settlement_date?: string;
     maturity_date?: string;
+    last_coupon_date?: string;
     transaction_number?: number;
     price?: number;
     principal_amount?: number;
@@ -115,6 +116,7 @@ export class UpdateUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       transaction_date: input.data?.transaction_date,
       settlement_date: input.data?.settlement_date,
       maturity_date: input.data?.maturity_date,
+      last_coupon_date: input.data?.last_coupon_date,
 
       transaction_number: input.data?.transaction_number,
 
