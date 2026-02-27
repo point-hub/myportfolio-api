@@ -25,6 +25,10 @@ export interface IInput {
     bank_account_uuid?: string
     received_date?: string
     received_amount?: number
+    additional_bank_id?: string
+    additional_bank_account_uuid?: string
+    additional_received_date?: string
+    additional_received_amount?: number
     remaining_amount?: number
     notes?: string
   }
@@ -76,7 +80,10 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
     }
 
     // Normalizes data (trim).
-    const remainingAmount = roundNumber((input.data?.amount ?? 0) - (input.data?.received_amount ?? 0), 2);
+    const remainingAmount = roundNumber((input.data?.amount ?? 0)
+      - (input.data?.received_amount ?? 0)
+      - (input.data?.additional_received_amount ?? 0));
+
     const status = remainingAmount <= 0 ? 'withdrawn' : 'active';
     const data = {
       withdrawal: {
@@ -85,6 +92,10 @@ export class WithdrawalUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> 
         bank_account_uuid: input.data?.bank_account_uuid,
         received_date: input.data?.received_date,
         received_amount: input.data?.received_amount,
+        additional_bank_id: input.data?.additional_bank_id,
+        additional_bank_account_uuid: input.data?.additional_bank_account_uuid,
+        additional_received_date: input.data?.additional_received_date,
+        additional_received_amount: input.data?.additional_received_amount,
         remaining_amount: remainingAmount,
         notes: input.data?.notes,
         created_by_id: input.authUser._id,

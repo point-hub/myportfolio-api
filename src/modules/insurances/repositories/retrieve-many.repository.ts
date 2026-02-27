@@ -50,6 +50,16 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
       'interest.bank_account_uuid',
       'interest.bank',
     ));
+    pipeline.push(...this.pipeJoinBankAccount(
+      'withdrawal.bank_id',
+      'withdrawal.bank_account_uuid',
+      'withdrawal.bank',
+    ));
+    pipeline.push(...this.pipeJoinBankAccount(
+      'withdrawal.additional_bank_id',
+      'withdrawal.additional_bank_account_uuid',
+      'withdrawal.additional_bank',
+    ));
     pipeline.push(...this.pipeQueryFilter(query));
     pipeline.push(...this.pipeProject());
 
