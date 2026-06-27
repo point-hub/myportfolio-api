@@ -1,7 +1,5 @@
 import type { IDatabase, IPipeline, IQuery } from '@point-hub/papi';
 
-import { addDateRangeFilter } from '@/utils/date-range-filter';
-
 export type InvestmentType = 'savings' | 'deposits' | 'insurances' | 'stocks' | 'bonds'
 
 export interface IInvestmentSummaryItem {
@@ -48,12 +46,12 @@ const instruments: { type: InvestmentType; label: string; collection: string }[]
   { type: 'insurances', label: 'Asuransi', collection: 'insurances' },
 ];
 
-const allocationInstruments: { type: InvestmentType; label: string; collection: string; amountField: string; dateField: string; bankField?: string; bankAccountField?: string }[] = [
-  { type: 'savings', label: 'Tabungan', collection: 'savings', amountField: 'placement.amount', dateField: 'placement.date', bankField: 'source.bank_id', bankAccountField: 'source.bank_account_uuid' },
-  { type: 'deposits', label: 'Deposito', collection: 'deposits', amountField: 'placement.amount', dateField: 'placement.date', bankField: 'source.bank_id', bankAccountField: 'source.bank_account_uuid' },
-  { type: 'insurances', label: 'Asuransi', collection: 'insurances', amountField: 'placement.amount', dateField: 'placement.date', bankField: 'source.bank_id', bankAccountField: 'source.bank_account_uuid' },
-  { type: 'stocks', label: 'Saham', collection: 'stocks', amountField: 'buying_proceed', dateField: 'transaction_date' },
-  { type: 'bonds', label: 'Obligasi', collection: 'bonds', amountField: 'principal_amount', dateField: 'transaction_date', bankField: 'bank_source_id', bankAccountField: 'bank_source_account_uuid' },
+const allocationInstruments: { type: InvestmentType; label: string; collection: string; amountFields: string[]; bankField?: string; groupField?: string }[] = [
+  { type: 'savings', label: 'Tabungan', collection: 'savings', amountFields: ['placement.amount'], bankField: 'source.bank_id', groupField: 'group_id' },
+  { type: 'deposits', label: 'Deposito', collection: 'deposits', amountFields: ['placement.amount'], bankField: 'source.bank_id', groupField: 'group_id' },
+  { type: 'insurances', label: 'Asuransi', collection: 'insurances', amountFields: ['placement.amount'], bankField: 'source.bank_id', groupField: 'group_id' },
+  { type: 'stocks', label: 'Saham', collection: 'stocks', amountFields: ['proceed_amount', 'buying_proceed', 'buying_total'] },
+  { type: 'bonds', label: 'Obligasi', collection: 'bonds', amountFields: ['principal_amount'], bankField: 'bank_source_id' },
 ];
 
 export class InvestmentSummaryRepository implements IInvestmentSummaryRepository {
@@ -63,7 +61,7 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
   ) { }
 
   async handle(query: IQuery): Promise<IInvestmentSummaryOutput> {
-    const selectedType = this.getString(query['search.instrument_type']);
+    const selectedType = this.getSearchString(query, 'instrument_type');
     const selectedInstruments = instruments.filter((instrument) => !selectedType || instrument.type === selectedType);
     const selectedAllocationInstruments = allocationInstruments.filter((instrument) => !selectedType || instrument.type === selectedType);
 
@@ -140,16 +138,24 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
   }
 
   private async aggregateAllocationInstrument(
-    instrument: { collection: string; amountField: string; dateField: string; bankField?: string; bankAccountField?: string },
+    instrument: { collection: string; amountFields: string[]; bankField?: string; groupField?: string },
     query: IQuery,
   ): Promise<Pick<IAggregationOutput, 'acquisition_value'>> {
+    const amountExpression = instrument.amountFields.reduceRight<Record<string, unknown> | number>((fallback, amountField) => ({
+      $cond: [
+        { $gt: [{ $ifNull: [`$${amountField}`, 0] }, 0] },
+        { $ifNull: [`$${amountField}`, 0] },
+        fallback,
+      ],
+    }), 0);
+
     const pipeline: IPipeline[] = [
-      ...this.pipeAllocationQueryFilter(query, instrument.dateField, instrument.bankField, instrument.bankAccountField),
+      ...this.pipeAllocationQueryFilter(query, instrument.bankField, instrument.groupField),
       {
         $group: {
           _id: null,
           acquisition_value: {
-            $sum: { $ifNull: [`$${instrument.amountField}`, 0] },
+            $sum: amountExpression,
           },
         },
       },
@@ -228,63 +234,57 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
       { status: { $in: ['active', 'renewed'] } },
     ];
 
-    const ownerId = this.getString(query['search.owner_id']);
+    const ownerId = this.getSearchString(query, 'owner_id');
     if (ownerId) {
       filters.push({ owner_id: ownerId });
     }
 
-    const bankId = this.getString(query['search.bank_id']);
+    const bankId = this.getSearchString(query, 'bank_id');
     if (bankId) {
       filters.push({ 'source.bank_id': bankId });
     }
 
-    const bankAccountUuid = this.getString(query['search.bank_account_uuid']);
-    if (bankAccountUuid) {
-      filters.push({ 'source.bank_account_uuid': bankAccountUuid });
+    const groupId = this.getSearchString(query, 'group_id');
+    if (groupId) {
+      filters.push({ group_id: groupId });
     }
-
-    addDateRangeFilter(
-      filters,
-      'placement.date',
-      this.getString(query['search.date_from']),
-      this.getString(query['search.date_to']) || new Date().toISOString().substring(0, 10),
-    );
 
     return [{ $match: { $and: filters } }];
   }
 
-  private pipeAllocationQueryFilter(query: IQuery, dateField: string, bankField?: string, bankAccountField?: string): IPipeline[] {
+  private pipeAllocationQueryFilter(query: IQuery, bankField?: string, groupField?: string): IPipeline[] {
     const filters: Record<string, unknown>[] = [
       { is_archived: false },
       { status: 'active' },
     ];
 
-    const ownerId = this.getString(query['search.owner_id']);
+    const ownerId = this.getSearchString(query, 'owner_id');
     if (ownerId) {
       filters.push({ owner_id: ownerId });
     }
 
-    const bankId = this.getString(query['search.bank_id']);
+    const bankId = this.getSearchString(query, 'bank_id');
     if (bankId) {
       filters.push(bankField ? { [bankField]: bankId } : { _id: { $exists: false } });
     }
 
-    const bankAccountUuid = this.getString(query['search.bank_account_uuid']);
-    if (bankAccountUuid) {
-      filters.push(bankAccountField ? { [bankAccountField]: bankAccountUuid } : { _id: { $exists: false } });
+    const groupId = this.getSearchString(query, 'group_id');
+    if (groupId) {
+      filters.push(groupField ? { [groupField]: groupId } : { _id: { $exists: false } });
     }
-
-    addDateRangeFilter(
-      filters,
-      dateField,
-      this.getString(query['search.date_from']),
-      this.getString(query['search.date_to']) || new Date().toISOString().substring(0, 10),
-    );
 
     return [{ $match: { $and: filters } }];
   }
 
   private getString(value: unknown): string | undefined {
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  }
+
+  private getSearchString(query: IQuery, field: string): string | undefined {
+    const nestedSearch = query.search as Record<string, unknown> | undefined;
+
+    return this.getString(query[`search.${field}`]) ??
+      this.getString(query[`search[${field}]`]) ??
+      this.getString(nestedSearch?.[field]);
   }
 }

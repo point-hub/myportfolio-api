@@ -20,6 +20,7 @@ export interface ISuccessData {
     _id?: string
     code?: string
     name?: string
+    type?: 'owner' | 'group'
     notes?: string
     is_archived?: boolean
     created_at?: Date
@@ -65,6 +66,7 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
           _id: item._id,
           code: item.code,
           name: item.name,
+          type: item.type,
           notes: item.notes,
           is_archived: item.is_archived,
           created_at: item.created_at,

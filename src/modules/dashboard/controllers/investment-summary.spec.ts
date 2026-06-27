@@ -8,6 +8,7 @@ import { type IAuthUserWithTokenResponse, TestService } from '@/modules/_shared/
 import DepositFactory from '@/modules/deposits/factory';
 import InsuranceFactory from '@/modules/insurances/factory';
 import SavingFactory from '@/modules/savings/factory';
+import StockFactory from '@/modules/stocks/factory';
 
 describe('retrieve investment dashboard summary', async () => {
   let app: Express;
@@ -44,6 +45,7 @@ describe('retrieve investment dashboard summary', async () => {
     await savingFactory.state({
       status: 'active',
       is_archived: false,
+      group_id: 'group-a',
       placement: {
         amount: 1000,
         date: '2026-01-01',
@@ -57,11 +59,21 @@ describe('retrieve investment dashboard summary', async () => {
         { amount: 50 },
       ],
     }).create();
+    await savingFactory.state({
+      status: 'active',
+      is_archived: false,
+      group_id: 'group-a',
+      placement: {
+        amount: 500,
+        date: '2030-01-01',
+      },
+    }).create();
 
     const depositFactory = new DepositFactory(DatabaseTestUtil.dbConnection);
     await depositFactory.state({
       status: 'active',
       is_archived: false,
+      group_id: 'group-a',
       placement: {
         amount: 2000,
         date: '2026-01-01',
@@ -80,6 +92,7 @@ describe('retrieve investment dashboard summary', async () => {
     await insuranceFactory.state({
       status: 'renewed',
       is_archived: false,
+      group_id: 'group-a',
       placement: {
         amount: 3000,
         date: '2026-01-01',
@@ -94,6 +107,16 @@ describe('retrieve investment dashboard summary', async () => {
       ],
     }).create();
 
+    const stockFactory = new StockFactory(DatabaseTestUtil.dbConnection);
+    await stockFactory.state({
+      status: 'active',
+      is_archived: false,
+      transaction_date: '2026-01-01',
+      proceed_amount: 0,
+      buying_proceed: 0,
+      buying_total: 4000,
+    }).create();
+
     const response = await request(app)
       .get('/v1/dashboard/investments')
       .set('Authorization', `Bearer ${authorizedUser.accessToken}`)
@@ -106,17 +129,19 @@ describe('retrieve investment dashboard summary', async () => {
 
     expect(response.statusCode).toEqual(200);
     expect(response.body.data).toHaveLength(3);
+    expect(response.body.allocation).toHaveLength(5);
 
     const savings = response.body.data.find((item: { type: string }) => item.type === 'savings');
     const deposits = response.body.data.find((item: { type: string }) => item.type === 'deposits');
     const insurances = response.body.data.find((item: { type: string }) => item.type === 'insurances');
+    const stockAllocation = response.body.allocation.find((item: { type: string }) => item.type === 'stocks');
 
-    expect(savings.acquisition_value).toStrictEqual(1000);
-    expect(savings.weight).toStrictEqual(1000 / 3000 * 100);
-    expect(savings.return_in).toStrictEqual(150 / 1000 * 100);
+    expect(savings.acquisition_value).toStrictEqual(1500);
+    expect(savings.weight).toStrictEqual(1500 / 3500 * 100);
+    expect(savings.return_in).toStrictEqual(150 / 1500 * 100);
 
     expect(deposits.acquisition_value).toStrictEqual(2000);
-    expect(deposits.weight).toStrictEqual(2000 / 3000 * 100);
+    expect(deposits.weight).toStrictEqual(2000 / 3500 * 100);
     expect(deposits.return_in).toStrictEqual(300 / 2000 * 100);
 
     expect(insurances.acquisition_value).toStrictEqual(0);
@@ -125,10 +150,53 @@ describe('retrieve investment dashboard summary', async () => {
     expect(insurances.total_interest).toStrictEqual(300);
     expect(insurances.cashback).toStrictEqual(150);
 
-    expect(response.body.total.acquisition_value).toStrictEqual(3000);
+    expect(stockAllocation.acquisition_value).toStrictEqual(4000);
+    expect(stockAllocation.weight).toStrictEqual(4000 / 7500 * 100);
+
+    expect(response.body.total.acquisition_value).toStrictEqual(3500);
     expect(response.body.total.gross_interest).toStrictEqual(670);
     expect(response.body.total.tax).toStrictEqual(70);
     expect(response.body.total.total_interest).toStrictEqual(600);
     expect(response.body.total.cashback).toStrictEqual(300);
+  });
+
+  it('S.2. succeeds by filtering summary by group', async () => {
+    const savingFactory = new SavingFactory(DatabaseTestUtil.dbConnection);
+    await savingFactory.state({
+      status: 'active',
+      is_archived: false,
+      group_id: 'group-a',
+      placement: {
+        amount: 1000,
+        date: '2026-01-01',
+      },
+    }).create();
+    await savingFactory.state({
+      status: 'active',
+      is_archived: false,
+      group_id: 'group-b',
+      placement: {
+        amount: 2000,
+        date: '2026-01-01',
+      },
+    }).create();
+
+    const response = await request(app)
+      .get('/v1/dashboard/investments')
+      .set('Authorization', `Bearer ${authorizedUser.accessToken}`)
+      .query({
+        search: {
+          group_id: 'group-a',
+        },
+      });
+
+    expect(response.statusCode).toEqual(200);
+
+    const savings = response.body.data.find((item: { type: string }) => item.type === 'savings');
+    const savingAllocation = response.body.allocation.find((item: { type: string }) => item.type === 'savings');
+
+    expect(savings.acquisition_value).toStrictEqual(1000);
+    expect(savingAllocation.acquisition_value).toStrictEqual(1000);
+    expect(response.body.total.acquisition_value).toStrictEqual(1000);
   });
 });
