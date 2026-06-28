@@ -27,6 +27,8 @@ export interface ICashflowOutput {
   placement_bank?: ICashflowBankAccount
   description: string
   income: number
+  principal_debit: number
+  principal_credit: number
   principal_balance: number
   notes?: string
   income_debit: number
@@ -62,6 +64,8 @@ export class RetrieveCashflowsRepository implements IRetrieveCashflowsRepository
     pipeline.push(...this.pipeFlatCashflows());
     pipeline.push(...this.pipeRootCashflow());
     pipeline.push(...this.pipeQueryFilter(query));
+    pipeline.push(...this.pipeRunningBalances());
+    pipeline.push(...this.pipeBalanceFilter(query));
 
     const response = await this.database.collection(collectionName).aggregate<ICashflowOutput>(pipeline, {
       ...query,
@@ -173,7 +177,9 @@ export class RetrieveCashflowsRepository implements IRetrieveCashflowsRepository
                     placement_bank: '$placement_bank',
                     description: 'Placement',
                     income: 0,
-                    principal_balance: { $ifNull: ['$placement.amount', 0] },
+                    principal_debit: { $ifNull: ['$placement.amount', 0] },
+                    principal_credit: 0,
+                    principal_balance: 0,
                     notes: '$notes',
                     income_debit: 0,
                     income_credit: 0,
@@ -196,7 +202,14 @@ export class RetrieveCashflowsRepository implements IRetrieveCashflowsRepository
                     placement_bank: '$placement_bank',
                     description: 'Withdrawal',
                     income: 0,
-                    principal_balance: { $multiply: [{ $ifNull: ['$withdrawal.received_amount', 0] }, -1] },
+                    principal_debit: 0,
+                    principal_credit: {
+                      $add: [
+                        { $ifNull: ['$withdrawal.received_amount', 0] },
+                        { $ifNull: ['$withdrawal.additional_received_amount', 0] },
+                      ],
+                    },
+                    principal_balance: 0,
                     notes: '$withdrawal.notes',
                     income_debit: 0,
                     income_credit: 0,
@@ -231,28 +244,83 @@ export class RetrieveCashflowsRepository implements IRetrieveCashflowsRepository
                         { $ifNull: ['$$interest.received_additional_payment_amount', 0] },
                       ],
                     },
+                    principal_debit: 0,
+                    principal_credit: 0,
                     principal_balance: 0,
                     notes: '$notes',
-                    income_debit: 0,
-                    income_credit: {
+                    income_debit: {
                       $add: [
                         { $ifNull: ['$$interest.received_amount', 0] },
                         { $ifNull: ['$$interest.received_additional_payment_amount', 0] },
                       ],
                     },
+                    income_credit: 0,
                     income_account: '$interest_bank',
-                    balance: {
-                      $add: [
-                        { $ifNull: ['$$interest.received_amount', 0] },
-                        { $ifNull: ['$$interest.received_additional_payment_amount', 0] },
-                      ],
-                    },
+                    balance: 0,
                   },
                 },
               },
             ],
           },
         },
+      },
+    ];
+  }
+
+  private pipeRunningBalances(): IPipeline[] {
+    return [
+      {
+        $set: {
+          transaction_order: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$transaction_type', 'placement'] }, then: 1 },
+                { case: { $eq: ['$transaction_type', 'withdrawal'] }, then: 2 },
+                { case: { $eq: ['$transaction_type', 'realised-interest'] }, then: 3 },
+              ],
+              default: 9,
+            },
+          },
+        },
+      },
+      {
+        $set: {
+          principal_delta: {
+            $subtract: [
+              { $ifNull: ['$principal_debit', 0] },
+              { $ifNull: ['$principal_credit', 0] },
+            ],
+          },
+          income_delta: {
+            $subtract: [
+              { $ifNull: ['$income_debit', 0] },
+              { $ifNull: ['$income_credit', 0] },
+            ],
+          },
+        },
+      },
+      {
+        $setWindowFields: {
+          sortBy: {
+            transaction_date: 1,
+            form_number: 1,
+            transaction_order: 1,
+            _id: 1,
+          },
+          output: {
+            principal_balance: {
+              $sum: '$principal_delta',
+              window: { documents: ['unbounded', 'current'] },
+            },
+            balance: {
+              $sum: '$income_delta',
+              window: { documents: ['unbounded', 'current'] },
+            },
+          },
+        },
+      },
+      {
+        $unset: ['transaction_order', 'principal_delta', 'income_delta'],
       },
     ];
   }
@@ -315,9 +383,18 @@ export class RetrieveCashflowsRepository implements IRetrieveCashflowsRepository
     addDateRangeFilter(filters, 'transaction_date', query?.['search.transaction_date_from'], query?.['search.transaction_date_to']);
 
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'income', query?.['search.income']);
-    BaseMongoDBQueryFilters.addNumberFilter(filters, 'principal_balance', query?.['search.principal_balance']);
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'principal_debit', query?.['search.principal_debit']);
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'principal_credit', query?.['search.principal_credit']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'income_debit', query?.['search.income_debit']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'income_credit', query?.['search.income_credit']);
+
+    return filters.length > 0 ? [{ $match: { $and: filters } }] : [];
+  }
+
+  private pipeBalanceFilter(query: IQuery): IPipeline[] {
+    const filters: Record<string, unknown>[] = [];
+
+    BaseMongoDBQueryFilters.addNumberFilter(filters, 'principal_balance', query?.['search.principal_balance']);
     BaseMongoDBQueryFilters.addNumberFilter(filters, 'balance', query?.['search.balance']);
 
     return filters.length > 0 ? [{ $match: { $and: filters } }] : [];

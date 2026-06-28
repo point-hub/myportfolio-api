@@ -32,7 +32,7 @@ export class ExportCashflowsUseCase extends BaseUseCase<IInput, IDeps, ISuccessD
     })).toString('base64url');
 
     return this.success({
-      url: `${apiConfig.baseUrl}/v1/deposits/cashflows/export-download?token=${token}`,
+      url: `${apiConfig.baseUrl}/v1/cashflows/export-download?token=${token}`,
       expires_at: expiresAt.toISOString(),
     });
   }

@@ -36,6 +36,9 @@ export interface IDeposit {
     amount?: number
     received_date?: string
     received_amount?: number
+    received_additional_payment_date?: string
+    received_additional_payment_amount?: number
+    remaining_amount?: number
   }[]
   cashback?: {
     bank_id?: string
@@ -48,11 +51,17 @@ export interface IDeposit {
     amount?: number
     received_date?: string
     received_amount?: number
+    received_additional_payment_date?: string
+    received_additional_payment_amount?: number
+    remaining_amount?: number
   }[]
   withdrawal?: {
     received_date?: string
     received_amount?: number
+    additional_received_date?: string
+    additional_received_amount?: number
     remaining_amount?: number
+    notes?: string
     bank?: IBank
   }
   notes?: string | null | undefined
