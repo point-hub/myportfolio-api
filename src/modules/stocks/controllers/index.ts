@@ -4,6 +4,7 @@ export { deleteController } from './delete.controller';
 export { draftController } from './draft.controller';
 export { restoreController } from './restore.controller';
 export { retrieveController } from './retrieve.controller';
+export { retrieveHoldingsController } from './retrieve-holdings.controller';
 export { retrieveIssuersController } from './retrieve-issuers.controller';
 export { retrieveManyController } from './retrieve-many.controller';
 export { updateController } from './update.controller';
