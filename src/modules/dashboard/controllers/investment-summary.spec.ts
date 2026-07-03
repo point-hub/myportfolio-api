@@ -5,6 +5,7 @@ import request from 'supertest';
 
 import { createApp } from '@/app';
 import { type IAuthUserWithTokenResponse, TestService } from '@/modules/_shared/services/test.service';
+import BondFactory from '@/modules/bonds/factory';
 import DepositFactory from '@/modules/deposits/factory';
 import InsuranceFactory from '@/modules/insurances/factory';
 import SavingFactory from '@/modules/savings/factory';
@@ -198,5 +199,26 @@ describe('retrieve investment dashboard summary', async () => {
     expect(savings.acquisition_value).toStrictEqual(1000);
     expect(savingAllocation.acquisition_value).toStrictEqual(1000);
     expect(response.body.total.acquisition_value).toStrictEqual(1000);
+  });
+
+  it('S.3. succeeds by calculating bond allocation from remaining amount', async () => {
+    const bondFactory = new BondFactory(DatabaseTestUtil.dbConnection);
+    await bondFactory.state({
+      status: 'active',
+      is_archived: false,
+      principal_amount: 2600,
+      remaining_amount: 1600,
+    }).create();
+
+    const response = await request(app)
+      .get('/v1/dashboard/investments')
+      .set('Authorization', `Bearer ${authorizedUser.accessToken}`);
+
+    expect(response.statusCode).toEqual(200);
+
+    const bondAllocation = response.body.allocation.find((item: { type: string }) => item.type === 'bonds');
+
+    expect(bondAllocation.acquisition_value).toStrictEqual(1600);
+    expect(bondAllocation.weight).toStrictEqual(100);
   });
 });

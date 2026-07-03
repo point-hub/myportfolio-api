@@ -51,7 +51,7 @@ const allocationInstruments: { type: InvestmentType; label: string; collection: 
   { type: 'deposits', label: 'Deposito', collection: 'deposits', amountFields: ['placement.amount'], bankField: 'source.bank_id', groupField: 'group_id' },
   { type: 'insurances', label: 'Asuransi', collection: 'insurances', amountFields: ['placement.amount'], bankField: 'source.bank_id', groupField: 'group_id' },
   { type: 'stocks', label: 'Saham', collection: 'stocks', amountFields: ['proceed_amount', 'buying_proceed', 'buying_total'] },
-  { type: 'bonds', label: 'Obligasi', collection: 'bonds', amountFields: ['principal_amount'], bankField: 'bank_source_id' },
+  { type: 'bonds', label: 'Obligasi', collection: 'bonds', amountFields: ['remaining_amount', 'principal_amount'], bankField: 'bank_source_id' },
 ];
 
 export class InvestmentSummaryRepository implements IInvestmentSummaryRepository {
