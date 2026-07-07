@@ -41,6 +41,24 @@ describe('retrieve investment dashboard summary', async () => {
     expect(response.body.code).toStrictEqual(403);
   });
 
+  it('S.0. succeeds with empty investment data', async () => {
+    const response = await request(app)
+      .get('/v1/dashboard/investments')
+      .set('Authorization', `Bearer ${authorizedUser.accessToken}`);
+
+    expect(response.statusCode).toEqual(200);
+    expect(response.body.allocation).toHaveLength(5);
+    expect(response.body.data).toHaveLength(3);
+
+    for (const item of response.body.allocation) {
+      expect(item.acquisition_value).toStrictEqual(0);
+      expect(item.weight).toStrictEqual(0);
+    }
+
+    expect(response.body.total.acquisition_value).toStrictEqual(0);
+    expect(response.body.total.weight).toStrictEqual(0);
+  });
+
   it('S.1. succeeds by calculating allocation and return summary', async () => {
     const savingFactory = new SavingFactory(DatabaseTestUtil.dbConnection);
     await savingFactory.state({
@@ -113,8 +131,8 @@ describe('retrieve investment dashboard summary', async () => {
       status: 'active',
       is_archived: false,
       transaction_date: '2026-01-01',
-      proceed_amount: 0,
-      buying_proceed: 0,
+      proceed_amount: 5000,
+      buying_proceed: 4500,
       buying_total: 4000,
     }).create();
 
@@ -220,5 +238,77 @@ describe('retrieve investment dashboard summary', async () => {
 
     expect(bondAllocation.acquisition_value).toStrictEqual(1600);
     expect(bondAllocation.weight).toStrictEqual(100);
+  });
+
+  it('S.4. succeeds by calculating portfolio allocation from simulation data', async () => {
+    const depositFactory = new DepositFactory(DatabaseTestUtil.dbConnection);
+    for (const amount of [10_000_000, 2_400_000, 51_000_000, 67_000_000, 100_000_000]) {
+      await depositFactory.state({
+        status: 'active',
+        is_archived: false,
+        placement: { amount },
+      }).create();
+    }
+
+    const savingFactory = new SavingFactory(DatabaseTestUtil.dbConnection);
+    for (const amount of [67_000_000, 2_400_000, 51_000_000, 67_000_000, 15_000_000]) {
+      await savingFactory.state({
+        status: 'active',
+        is_archived: false,
+        placement: { amount },
+      }).create();
+    }
+
+    const insuranceFactory = new InsuranceFactory(DatabaseTestUtil.dbConnection);
+    for (const amount of [90_000_000, 2_400_000, 51_000_000, 250_000_000, 15_000_000]) {
+      await insuranceFactory.state({
+        status: 'active',
+        is_archived: false,
+        placement: { amount },
+      }).create();
+    }
+
+    const bondFactory = new BondFactory(DatabaseTestUtil.dbConnection);
+    for (const principalAmount of [100_000_000, 5_000_000, 160_000_000, 17_000_000, 190_000_000]) {
+      await bondFactory.state({
+        status: 'active',
+        is_archived: false,
+        principal_amount: principalAmount,
+        remaining_amount: 0,
+      }).create();
+    }
+
+    const stockFactory = new StockFactory(DatabaseTestUtil.dbConnection);
+    for (const buyingTotal of [100_000_000, 230_000_000, 430_000_000, 100_000_000, 600_000_000]) {
+      await stockFactory.state({
+        status: 'active',
+        is_archived: false,
+        proceed_amount: 0,
+        buying_proceed: 0,
+        buying_total: buyingTotal,
+      }).create();
+    }
+
+    const response = await request(app)
+      .get('/v1/dashboard/investments')
+      .set('Authorization', `Bearer ${authorizedUser.accessToken}`);
+
+    expect(response.statusCode).toEqual(200);
+
+    const allocationByType = Object.fromEntries(
+      response.body.allocation.map((item: { type: string; acquisition_value: number; weight: number }) => [item.type, item]),
+    );
+
+    expect(allocationByType.deposits.acquisition_value).toStrictEqual(230_400_000);
+    expect(allocationByType.savings.acquisition_value).toStrictEqual(202_400_000);
+    expect(allocationByType.insurances.acquisition_value).toStrictEqual(408_400_000);
+    expect(allocationByType.bonds.acquisition_value).toStrictEqual(472_000_000);
+    expect(allocationByType.stocks.acquisition_value).toStrictEqual(1_460_000_000);
+
+    expect(allocationByType.deposits.weight).toBeCloseTo(8.31, 2);
+    expect(allocationByType.savings.weight).toBeCloseTo(7.30, 2);
+    expect(allocationByType.insurances.weight).toBeCloseTo(14.73, 2);
+    expect(allocationByType.bonds.weight).toBeCloseTo(17.02, 2);
+    expect(allocationByType.stocks.weight).toBeCloseTo(52.65, 2);
   });
 });
