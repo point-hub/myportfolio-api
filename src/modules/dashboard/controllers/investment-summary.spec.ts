@@ -219,7 +219,7 @@ describe('retrieve investment dashboard summary', async () => {
     expect(response.body.total.acquisition_value).toStrictEqual(1000);
   });
 
-  it('S.3. succeeds by calculating bond allocation from remaining amount', async () => {
+  it('S.3. succeeds by calculating bond allocation from principal amount', async () => {
     const bondFactory = new BondFactory(DatabaseTestUtil.dbConnection);
     await bondFactory.state({
       status: 'active',
@@ -236,7 +236,7 @@ describe('retrieve investment dashboard summary', async () => {
 
     const bondAllocation = response.body.allocation.find((item: { type: string }) => item.type === 'bonds');
 
-    expect(bondAllocation.acquisition_value).toStrictEqual(1600);
+    expect(bondAllocation.acquisition_value).toStrictEqual(2600);
     expect(bondAllocation.weight).toStrictEqual(100);
   });
 
@@ -251,7 +251,7 @@ describe('retrieve investment dashboard summary', async () => {
     }
 
     const savingFactory = new SavingFactory(DatabaseTestUtil.dbConnection);
-    for (const amount of [67_000_000, 2_400_000, 51_000_000, 67_000_000, 15_000_000]) {
+    for (const amount of [67_000_000, 2_400_000, 51_000_000, 67_000_000, 16_000_000]) {
       await savingFactory.state({
         status: 'active',
         is_archived: false,
@@ -269,7 +269,7 @@ describe('retrieve investment dashboard summary', async () => {
     }
 
     const bondFactory = new BondFactory(DatabaseTestUtil.dbConnection);
-    for (const principalAmount of [100_000_000, 5_000_000, 160_000_000, 17_000_000, 190_000_000]) {
+    for (const principalAmount of [100_000_000, 15_000_000, 160_000_000, 17_000_000, 180_000_000]) {
       await bondFactory.state({
         status: 'active',
         is_archived: false,
@@ -300,15 +300,15 @@ describe('retrieve investment dashboard summary', async () => {
     );
 
     expect(allocationByType.deposits.acquisition_value).toStrictEqual(230_400_000);
-    expect(allocationByType.savings.acquisition_value).toStrictEqual(202_400_000);
+    expect(allocationByType.savings.acquisition_value).toStrictEqual(203_400_000);
     expect(allocationByType.insurances.acquisition_value).toStrictEqual(408_400_000);
     expect(allocationByType.bonds.acquisition_value).toStrictEqual(472_000_000);
     expect(allocationByType.stocks.acquisition_value).toStrictEqual(1_460_000_000);
 
     expect(allocationByType.deposits.weight).toBeCloseTo(8.31, 2);
-    expect(allocationByType.savings.weight).toBeCloseTo(7.30, 2);
-    expect(allocationByType.insurances.weight).toBeCloseTo(14.73, 2);
-    expect(allocationByType.bonds.weight).toBeCloseTo(17.02, 2);
-    expect(allocationByType.stocks.weight).toBeCloseTo(52.65, 2);
+    expect(allocationByType.savings.weight).toBeCloseTo(7.33, 2);
+    expect(allocationByType.insurances.weight).toBeCloseTo(14.72, 2);
+    expect(allocationByType.bonds.weight).toBeCloseTo(17.01, 2);
+    expect(allocationByType.stocks.weight).toBeCloseTo(52.63, 2);
   });
 });
