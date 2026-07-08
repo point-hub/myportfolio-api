@@ -6,6 +6,7 @@ import { EmailService } from './modules/_shared/services/email.service';
 import ablyRouter from './modules/ably/router';
 import auditLogRouter from './modules/audit-logs/router';
 import bondRouter from './modules/bonds/router';
+import cashflowRouter from './modules/cashflows/router';
 import counterRouter from './modules/counters/router';
 import dashboardRouter from './modules/dashboard/router';
 import depositRouter from './modules/deposits/router';
@@ -43,6 +44,7 @@ export default async function (baseRouterInput: IBaseAppInput) {
   app.use('/v1/auth', await authRouter(baseRouterInput));
   app.use('/v1/health', await healthRouter(baseRouterInput));
   app.use('/v1/counters', await counterRouter(baseRouterInput));
+  app.use('/v1/cashflows', await cashflowRouter(baseRouterInput));
   app.use('/v1/dashboard', await dashboardRouter(baseRouterInput));
   app.use('/v1/master/users', await masterUserRouter(baseRouterInput));
   app.use('/v1/master/permissions', await masterPermissionRouter(baseRouterInput));
