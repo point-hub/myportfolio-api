@@ -240,7 +240,94 @@ describe('retrieve investment dashboard summary', async () => {
     expect(bondAllocation.weight).toStrictEqual(100);
   });
 
-  it('S.4. succeeds by calculating portfolio allocation from simulation data', async () => {
+  it('S.4. succeeds by calculating stock allocation from stock holding total buying price', async () => {
+    const stockFactory = new StockFactory(DatabaseTestUtil.dbConnection);
+    await stockFactory.state({
+      status: 'paid',
+      is_archived: false,
+      buying_list: [
+        {
+          issuer_id: 'issuer-bbca',
+          shares: 1000,
+          price: 425,
+          total: 425_000,
+        },
+      ],
+      selling_list: [
+        {
+          issuer_id: 'issuer-bbca',
+          shares: 50,
+          price: 620.9366,
+          total: 31_046.83,
+        },
+      ],
+      buying_total: 999_999,
+      selling_total: 0,
+    }).create();
+    await stockFactory.state({
+      status: 'active',
+      is_archived: false,
+      buying_list: [
+        {
+          issuer_id: 'issuer-bbca',
+          shares: 100,
+          price: 1000,
+          total: 100_000,
+        },
+      ],
+      buying_total: 999_999,
+      selling_total: 0,
+    }).create();
+    await stockFactory.state({
+      status: 'draft',
+      is_archived: false,
+      buying_list: [
+        {
+          issuer_id: 'issuer-bbca',
+          shares: 100,
+          price: 999,
+          total: 99_900,
+        },
+      ],
+      buying_total: 99_900,
+      selling_total: 0,
+    }).create();
+    await stockFactory.state({
+      status: 'active',
+      is_archived: false,
+      buying_list: [
+        {
+          issuer_id: 'issuer-closed',
+          shares: 100,
+          price: 1000,
+          total: 100_000,
+        },
+      ],
+      selling_list: [
+        {
+          issuer_id: 'issuer-closed',
+          shares: 100,
+          price: 900,
+          total: 90_000,
+        },
+      ],
+      buying_total: 100_000,
+      selling_total: 90_000,
+    }).create();
+
+    const response = await request(app)
+      .get('/v1/dashboard/investments')
+      .set('Authorization', `Bearer ${authorizedUser.accessToken}`);
+
+    expect(response.statusCode).toEqual(200);
+
+    const stockAllocation = response.body.allocation.find((item: { type: string }) => item.type === 'stocks');
+
+    expect(stockAllocation.acquisition_value).toBeCloseTo(493_953.17, 2);
+    expect(stockAllocation.weight).toStrictEqual(100);
+  });
+
+  it('S.5. succeeds by calculating portfolio allocation from simulation data', async () => {
     const depositFactory = new DepositFactory(DatabaseTestUtil.dbConnection);
     for (const amount of [10_000_000, 2_400_000, 51_000_000, 67_000_000, 100_000_000]) {
       await depositFactory.state({
@@ -299,16 +386,16 @@ describe('retrieve investment dashboard summary', async () => {
       response.body.allocation.map((item: { type: string; acquisition_value: number; weight: number }) => [item.type, item]),
     );
 
-    expect(allocationByType.deposits.acquisition_value).toStrictEqual(230_400_000);
-    expect(allocationByType.savings.acquisition_value).toStrictEqual(203_400_000);
-    expect(allocationByType.insurances.acquisition_value).toStrictEqual(408_400_000);
-    expect(allocationByType.bonds.acquisition_value).toStrictEqual(472_000_000);
-    expect(allocationByType.stocks.acquisition_value).toStrictEqual(1_460_000_000);
+    expect(allocationByType['deposits'].acquisition_value).toStrictEqual(230_400_000);
+    expect(allocationByType['savings'].acquisition_value).toStrictEqual(203_400_000);
+    expect(allocationByType['insurances'].acquisition_value).toStrictEqual(408_400_000);
+    expect(allocationByType['bonds'].acquisition_value).toStrictEqual(472_000_000);
+    expect(allocationByType['stocks'].acquisition_value).toStrictEqual(1_460_000_000);
 
-    expect(allocationByType.deposits.weight).toBeCloseTo(8.31, 2);
-    expect(allocationByType.savings.weight).toBeCloseTo(7.33, 2);
-    expect(allocationByType.insurances.weight).toBeCloseTo(14.72, 2);
-    expect(allocationByType.bonds.weight).toBeCloseTo(17.01, 2);
-    expect(allocationByType.stocks.weight).toBeCloseTo(52.63, 2);
+    expect(allocationByType['deposits'].weight).toBeCloseTo(8.31, 2);
+    expect(allocationByType['savings'].weight).toBeCloseTo(7.33, 2);
+    expect(allocationByType['insurances'].weight).toBeCloseTo(14.72, 2);
+    expect(allocationByType['bonds'].weight).toBeCloseTo(17.01, 2);
+    expect(allocationByType['stocks'].weight).toBeCloseTo(52.63, 2);
   });
 });

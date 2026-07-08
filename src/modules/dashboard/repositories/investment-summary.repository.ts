@@ -149,6 +149,10 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
       ],
     }), 0);
 
+    if (instrument.collection === 'stocks') {
+      return await this.aggregateStockHoldingAllocation(query);
+    }
+
     const pipeline: IPipeline[] = [
       ...this.pipeAllocationQueryFilter(query, instrument.bankField, instrument.groupField),
       {
@@ -174,6 +178,145 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
     );
 
     return response.data[0] ?? {};
+  }
+
+  private async aggregateStockHoldingAllocation(query: IQuery): Promise<Pick<IAggregationOutput, 'acquisition_value'>> {
+    const pipeline: IPipeline[] = [
+      ...this.pipeStockHoldingAllocationQueryFilter(query),
+      {
+        $project: {
+          movements: {
+            $cond: [
+              {
+                $gt: [
+                  {
+                    $size: {
+                      $concatArrays: [
+                        { $ifNull: ['$buying_list', []] },
+                        { $ifNull: ['$selling_list', []] },
+                      ],
+                    },
+                  },
+                  0,
+                ],
+              },
+              {
+                $concatArrays: [
+                  {
+                    $map: {
+                      input: { $ifNull: ['$buying_list', []] },
+                      as: 'buying',
+                      in: {
+                        issuer_id: '$$buying.issuer_id',
+                        number_of_shares: { $ifNull: ['$$buying.shares', 0] },
+                        total_buying_price: { $ifNull: ['$$buying.total', 0] },
+                      },
+                    },
+                  },
+                  {
+                    $map: {
+                      input: { $ifNull: ['$selling_list', []] },
+                      as: 'selling',
+                      in: {
+                        issuer_id: '$$selling.issuer_id',
+                        number_of_shares: { $multiply: [{ $ifNull: ['$$selling.shares', 0] }, -1] },
+                        total_buying_price: { $multiply: [{ $ifNull: ['$$selling.total', 0] }, -1] },
+                      },
+                    },
+                  },
+                ],
+              },
+              [
+                {
+                  issuer_id: { $literal: '__legacy_stock_holding__' },
+                  number_of_shares: {
+                    $cond: [
+                      {
+                        $gt: [
+                          {
+                            $subtract: [
+                              { $ifNull: ['$buying_total', 0] },
+                              { $ifNull: ['$selling_total', 0] },
+                            ],
+                          },
+                          0,
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                  total_buying_price: {
+                    $subtract: [
+                      { $ifNull: ['$buying_total', 0] },
+                      { $ifNull: ['$selling_total', 0] },
+                    ],
+                  },
+                },
+              ],
+            ],
+          },
+        },
+      },
+      { $unwind: '$movements' },
+      {
+        $group: {
+          _id: '$movements.issuer_id',
+          number_of_shares: {
+            $sum: '$movements.number_of_shares',
+          },
+          total_buying_price: {
+            $sum: '$movements.total_buying_price',
+          },
+        },
+      },
+      {
+        $match: {
+          number_of_shares: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          acquisition_value: {
+            $sum: '$total_buying_price',
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          acquisition_value: 1,
+        },
+      },
+    ];
+
+    const response = await this.database.collection('stocks').aggregate<Pick<IAggregationOutput, 'acquisition_value'>>(
+      pipeline,
+      { page: 1, page_size: 1 },
+      this.options,
+    );
+
+    return response.data[0] ?? {};
+  }
+
+  private pipeStockHoldingAllocationQueryFilter(query: IQuery): IPipeline[] {
+    const filters: Record<string, unknown>[] = [
+      { is_archived: false },
+      { status: { $ne: 'draft' } },
+    ];
+
+    const ownerId = this.getSearchString(query, 'owner_id');
+    if (ownerId) {
+      filters.push({ owner_id: ownerId });
+    }
+
+    const brokerId = this.getSearchString(query, 'broker_id');
+    if (brokerId) {
+      filters.push({ broker_id: brokerId });
+    }
+
+    return [{ $match: { $and: filters } }];
   }
 
   private async aggregateInstrument(collectionName: string, query: IQuery): Promise<IAggregationOutput> {
@@ -281,7 +424,7 @@ export class InvestmentSummaryRepository implements IInvestmentSummaryRepository
   }
 
   private getSearchString(query: IQuery, field: string): string | undefined {
-    const nestedSearch = query.search as Record<string, unknown> | undefined;
+    const nestedSearch = query['search'] as Record<string, unknown> | undefined;
 
     return this.getString(query[`search.${field}`]) ??
       this.getString(query[`search[${field}]`]) ??
