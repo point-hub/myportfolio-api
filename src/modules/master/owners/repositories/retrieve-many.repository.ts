@@ -41,7 +41,6 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           _id: item._id,
           code: item.code,
           name: item.name,
-          type: item.type,
           notes: item.notes,
           is_archived: item.is_archived,
           created_at: item.created_at,
@@ -71,9 +70,6 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
     // Filter specific field
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'code', query?.['search.code']);
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'name', query?.['search.name']);
-    if (query?.['search.type']) {
-      filters.push({ type: query['search.type'] });
-    }
     BaseMongoDBQueryFilters.addRegexFilter(filters, 'notes', query?.['search.notes']);
 
     // Filter boolean
@@ -118,7 +114,6 @@ export class RetrieveManyRepository implements IRetrieveManyRepository {
           _id: 1,
           code: 1,
           name: 1,
-          type: 1,
           notes: 1,
           is_archived: 1,
           created_at: 1,
