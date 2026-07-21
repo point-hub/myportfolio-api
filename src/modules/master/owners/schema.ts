@@ -33,10 +33,6 @@ export const schema: ISchema[] = [
           bsonType: 'string',
           description: 'The name of the owner entity.',
         },
-        type: {
-          enum: ['owner', 'group'],
-          description: 'The type of owner entity.',
-        },
         notes: {
           bsonType: 'string',
           description: 'Additional notes or information about the owner entity.',

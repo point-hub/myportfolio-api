@@ -14,7 +14,6 @@ export interface IRetrieveOutput {
   _id: string
   code: string
   name: string
-  type?: 'owner' | 'group'
   notes: string
   is_archived: boolean
   created_at: Date
@@ -43,7 +42,6 @@ export class RetrieveRepository implements IRetrieveRepository {
       _id: response.data[0]._id,
       code: response.data[0].code,
       name: response.data[0].name,
-      type: response.data[0].type,
       notes: response.data[0].notes,
       is_archived: response.data[0].is_archived,
       created_at: response.data[0].created_at,
@@ -100,7 +98,6 @@ export class RetrieveRepository implements IRetrieveRepository {
           _id: 1,
           code: 1,
           name: 1,
-          type: 1,
           notes: 1,
           is_archived: 1,
           created_at: 1,

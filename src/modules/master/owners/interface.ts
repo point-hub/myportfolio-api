@@ -2,7 +2,6 @@ export interface IOwner {
   _id?: string
   code?: string
   name?: string
-  type?: 'owner' | 'group'
   notes?: string | null | undefined
   is_archived?: boolean | null | undefined
   created_at?: Date
