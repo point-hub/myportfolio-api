@@ -27,7 +27,7 @@ export interface ISuccessData {
 
 export class RetrieveCashflowsUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
   async handle(input: IInput): Promise<IUseCaseOutputSuccess<ISuccessData> | IUseCaseOutputFailed> {
-    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'deposits:read');
+    const isAuthorized = this.deps.authorizationService.hasAccess(input.authUser.role?.permissions, 'investment-reports:read');
     if (!isAuthorized) {
       return this.fail({ code: 403, message: 'You do not have permission to perform this action.' });
     }

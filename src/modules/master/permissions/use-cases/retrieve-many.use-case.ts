@@ -1,5 +1,6 @@
 import { BaseUseCase, type IQuery, type IUseCaseOutputFailed, type IUseCaseOutputSuccess } from '@point-hub/papi';
 
+import { getPermissions } from '@/modules/_shared/data/permissions';
 import type { IAuthorizationService } from '@/modules/_shared/services/authorization.service';
 import type { IAuthUser } from '@/modules/master/users/interface';
 
@@ -29,6 +30,8 @@ export interface ISuccessData {
   }
 }
 
+type IPermissionOutput = ISuccessData['data'][number];
+
 /**
  * Use case: Retrieve Roles.
  *
@@ -56,9 +59,22 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
       ? input.query.fields.split(',').map(f => f.trim())
       : null;
 
+    const permissionsByName = new Map<string, IPermissionOutput>(
+      response.data.map(item => [item.name, item]),
+    );
+
+    for (const name of getPermissions()) {
+      if (!this.matchesQuery(name, input.query)) continue;
+
+      permissionsByName.set(name, {
+        ...permissionsByName.get(name),
+        name,
+      });
+    }
+
     // Return a success response.
     return this.success({
-      data: response.data.map(item => {
+      data: Array.from(permissionsByName.values()).map(item => {
         const mapped = {
           _id: item._id,
           name: item.name,
@@ -75,5 +91,19 @@ export class RetrieveManyUseCase extends BaseUseCase<IInput, IDeps, ISuccessData
       }),
       pagination: response.pagination,
     });
+  }
+
+  private matchesQuery(name: string, query: IQuery): boolean {
+    const searchAll = query?.['search.all'];
+    if (typeof searchAll === 'string' && !name.toLowerCase().includes(searchAll.toLowerCase())) {
+      return false;
+    }
+
+    const searchName = query?.['search.name'];
+    if (typeof searchName === 'string' && name !== searchName) {
+      return false;
+    }
+
+    return true;
   }
 }
