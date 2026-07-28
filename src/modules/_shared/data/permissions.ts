@@ -33,6 +33,7 @@ export const getPermissions = (): string[] => {
     'dividend-stocks': ['module', 'read', 'create', 'update', 'delete'],
     'bonds': ['module', 'read', 'create', 'update', 'delete'],
     'dashboard': ['read'],
+    'investment-reports': ['module', 'read'],
     'deposits': ['module', 'read', 'create', 'update', 'delete', 'receive-interest', 'receive-cashback', 'withdraw', 'renew'],
     'savings': ['module', 'read', 'create', 'update', 'delete', 'receive-interest', 'receive-cashback', 'withdraw', 'renew'],
     'insurances': ['module', 'read', 'create', 'update', 'delete', 'receive-interest', 'receive-cashback', 'withdraw', 'renew'],
