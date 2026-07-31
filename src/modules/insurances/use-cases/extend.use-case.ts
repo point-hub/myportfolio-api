@@ -150,8 +150,8 @@ export class ExtendUseCase extends BaseUseCase<IInput, IDeps, ISuccessData> {
       (sum, item) => sum + (item.amount || 0),
       0,
     );
-    if (!insuranceEntity.data.interest?.is_rollover && roundNumber(totalInterestAmount ?? 0, 2) !== insuranceEntity.data.interest?.net_amount) {
-      return this.fail({ code: 400, message: `Total interest schedule amount (${roundNumber(totalInterestAmount ?? 0, 2)}) does not match net amount (${insuranceEntity.data.interest?.net_amount}).` });
+    if (!insuranceEntity.data.interest?.is_rollover && roundNumber(totalInterestAmount ?? 0, 3) !== insuranceEntity.data.interest?.net_amount) {
+      return this.fail({ code: 400, message: `Total interest schedule amount (${roundNumber(totalInterestAmount ?? 0, 3)}) does not match net amount (${insuranceEntity.data.interest?.net_amount}).` });
     }
 
     // Validate uniqueness: single unique code field.
